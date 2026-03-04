@@ -31,6 +31,7 @@ public class TourSchedule {
     @Column(name = "available_slots", nullable = false)
     private Integer availableSlots;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "status", length = 20)
     private String status; // OPEN, CLOSED, FULL
 

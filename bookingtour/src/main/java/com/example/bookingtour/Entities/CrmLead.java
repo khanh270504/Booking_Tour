@@ -28,8 +28,9 @@ public class CrmLead {
     @Column(name = "source", length = 50)
     private String source; // FACEBOOK, ZALO, WEBSITE
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "status", length = 20)
-    private String status; // NEW, CONTACTED, POTENTIAL, LOST
+    private String status;
 
     @Column(name = "interested_tour_id")
     private Integer interestedTourId; // Tour khách đang hỏi

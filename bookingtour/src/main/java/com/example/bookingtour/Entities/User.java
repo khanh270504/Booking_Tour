@@ -27,6 +27,7 @@ public class User {
     @JoinColumn(name = "role_name", referencedColumnName = "role_name")
     private Role role;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "status", length = 20)
     private String status;
 

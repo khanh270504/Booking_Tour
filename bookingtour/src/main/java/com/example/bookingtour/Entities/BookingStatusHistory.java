@@ -21,9 +21,11 @@ public class BookingStatusHistory {
     @JoinColumn(name = "booking_id", nullable = false)
     private Booking booking;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "from_status", length = 30)
     private String fromStatus; // Trạng thái cũ (VD: PENDING)
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "to_status", length = 30)
     private String toStatus;   // Trạng thái mới (VD: CANCELLED)
 

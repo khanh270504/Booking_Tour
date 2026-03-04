@@ -18,5 +18,5 @@ public class RegisterRequest {
     @Size(min = 6, message = "Mật khẩu phải từ 6 ký tự trở lên")
     private String password;
 
-    // Role mặc định sẽ set là CUSTOMER ở Service, không cho Client gửi lên để tránh hack
+
 }

@@ -33,6 +33,7 @@ public class Tour {
     @Column(name = "description", columnDefinition = "text")
     private String description;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "status", length = 20)
     private String status;
 
