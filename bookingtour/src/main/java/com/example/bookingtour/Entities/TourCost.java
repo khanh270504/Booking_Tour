@@ -30,6 +30,7 @@ public class TourCost {
     @Column(name = "amount")
     private BigDecimal amount;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "status", length = 20)
     private String status; // UNPAID, PAID
 

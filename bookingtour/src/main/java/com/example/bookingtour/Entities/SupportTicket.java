@@ -37,6 +37,7 @@ public class SupportTicket {
     @Column(name = "priority", length = 20)
     private String priority; // HIGH, MEDIUM, LOW
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "status", length = 20)
     private String status; // OPEN, CLOSED
 

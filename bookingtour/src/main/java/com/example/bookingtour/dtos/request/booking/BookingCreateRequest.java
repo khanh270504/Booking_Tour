@@ -19,21 +19,5 @@ public class BookingCreateRequest {
     @NotEmpty(message = "Danh sách hành khách không được để trống")
     private List<PassengerRequest> passengers;
 
-    // --- Class con (Inner Class) để định nghĩa cấu trúc 1 hành khách ---
-    @Data
-    public static class PassengerRequest {
 
-        @NotBlank(message = "Tên hành khách không được để trống")
-        private String fullName;
-
-        // "ADULT" hoặc "CHILD"
-        @NotBlank(message = "Loại hành khách không được để trống")
-        private String passengerType;
-
-        private String gender;
-
-        
-        @NotBlank
-        private String birthDate;
-    }
 }

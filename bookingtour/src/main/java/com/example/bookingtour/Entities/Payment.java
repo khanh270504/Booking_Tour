@@ -29,6 +29,7 @@ public class Payment {
     @Column(name = "payment_method", length = 50)
     private String paymentMethod; // MOMO, VNPAY
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "status", length = 20)
     private String status; // SUCCESS, FAILED
 

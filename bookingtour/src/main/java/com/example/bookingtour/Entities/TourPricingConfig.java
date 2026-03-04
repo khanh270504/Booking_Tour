@@ -19,7 +19,7 @@ public class TourPricingConfig {
     @JoinColumn(name = "tour_id")
     private Tour tour;
 
-    // ADULT, CHILD, INFANT (Nên tạo Enum cho cái này)
+
     @Column(name = "passenger_type", length = 20)
     private String passengerType;
 
@@ -27,8 +27,8 @@ public class TourPricingConfig {
     private BigDecimal price;
 
     @Column(name = "currency", length = 3)
-    private String currency; // VND
+    private String currency;
 
     @Column(name = "effective_date")
-    private LocalDate effectiveDate; // Giá áp dụng từ ngày...
+    private LocalDate effectiveDate;
 }

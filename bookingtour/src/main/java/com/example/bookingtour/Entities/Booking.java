@@ -41,10 +41,10 @@ public class Booking {
 
     @Column(name = "total_final_price")
     private BigDecimal totalFinalPrice;
-    // ---------------------------------
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "status", length = 30)
-    private String status; // PENDING, DEPOSITED, PAID, CANCELLED
+    private String status;
 
     @CreationTimestamp
     @Column(name = "created_at")
