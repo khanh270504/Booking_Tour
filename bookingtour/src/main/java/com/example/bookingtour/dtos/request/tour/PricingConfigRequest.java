@@ -1,5 +1,6 @@
 package com.example.bookingtour.dtos.request.tour;
 
+import com.example.bookingtour.enums.PassengerType;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
@@ -12,7 +13,7 @@ public class PricingConfigRequest {
     private Integer tourId;
 
     @NotNull(message = "Loại hành khách không được để trống")
-    private String passengerType;
+    private PassengerType passengerType;
 
     @NotNull
     @DecimalMin(value = "0.0", message = "Giá không được âm")
