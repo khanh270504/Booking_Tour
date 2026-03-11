@@ -55,6 +55,7 @@ public class Booking {
     private BookingStatus status;
 
     @CreationTimestamp
-    @Column(name = "created_at", updatable = false) // Không cho phép sửa ngày tạo đơn
+    @Column(name = "created_at", updatable = false)
     private Instant createdAt;
+
 }

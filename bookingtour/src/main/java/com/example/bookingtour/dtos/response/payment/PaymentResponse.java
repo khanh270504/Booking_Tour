@@ -1,10 +1,12 @@
 package com.example.bookingtour.dtos.response.payment;
 
+import lombok.Builder;
 import lombok.Data;
 import java.math.BigDecimal;
 import java.time.Instant;
 
 @Data
+@Builder
 public class PaymentResponse {
     private Integer id;
     private Integer bookingId;
