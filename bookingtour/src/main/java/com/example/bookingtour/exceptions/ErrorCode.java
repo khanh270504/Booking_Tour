@@ -35,6 +35,7 @@ public enum ErrorCode {
     INVALID_STATUS(3009, "Trạng thái cập nhật không hợp lệ hoặc không đúng định dạng", HttpStatus.BAD_REQUEST),
     INVALID_AMOUNT(3010, "Số tiền hoặc giá trị không được là số âm", HttpStatus.BAD_REQUEST),
     SURCHARGE_NOT_FOUND(3011, "Không tìm thấy thông tin phụ phí này", HttpStatus.NOT_FOUND),
+    TOUR_FULL(3012, "Đã đủ số lượng", HttpStatus.BAD_REQUEST),
 
     // 5. Đơn hàng & Đặt vé (Booking)
     BOOKING_NOT_FOUND(4001, "Không tìm thấy mã đơn đặt Tour", HttpStatus.NOT_FOUND),

@@ -1,5 +1,6 @@
 package com.example.bookingtour.entities;
 
+import com.example.bookingtour.enums.PassengerType;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -13,6 +14,7 @@ import java.time.LocalDate;
 @AllArgsConstructor
 @Getter
 @Setter
+@Builder
 public class BookingPassenger {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -31,8 +33,9 @@ public class BookingPassenger {
     @Column(name = "gender", length = 10)
     private String gender;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "passenger_type", length = 20)
-    private String passengerType; // ADULT, CHILD
+    private PassengerType passengerType; // ADULT, CHILD
 
     @Column(name = "unit_price")
     private BigDecimal unitPrice; // Giá vé áp dụng cho người này lúc đặt
