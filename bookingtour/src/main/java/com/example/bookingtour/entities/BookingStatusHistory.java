@@ -14,6 +14,7 @@ import java.time.Instant;
 @AllArgsConstructor
 @Getter
 @Setter
+@Builder
 public class BookingStatusHistory {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

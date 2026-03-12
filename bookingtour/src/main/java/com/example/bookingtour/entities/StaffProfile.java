@@ -10,12 +10,11 @@ import java.time.LocalDate;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Getter
-@Setter
+@Builder
 public class StaffProfile {
+
     @Id
-    @Column(name = "user_id")
-    private String userId;
+    private Integer id;
 
     @OneToOne
     @MapsId

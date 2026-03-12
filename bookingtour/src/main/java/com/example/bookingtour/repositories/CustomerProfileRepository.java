@@ -7,6 +7,6 @@ import org.springframework.stereotype.Repository;
 import java.util.Optional;
 
 @Repository
-public interface CustomerProfileRepository extends JpaRepository<CustomerProfile, String> {
-    Optional<CustomerProfile> findByUserId(String userId);
+public interface CustomerProfileRepository extends JpaRepository<CustomerProfile, Integer> {
+    Optional<CustomerProfile> findByUser_Id(Integer id);
 }

@@ -17,8 +17,11 @@ import java.time.Instant;
 @Setter
 public class User {
     @Id
-    @Column(name = "user_id", length = 50)
-    private String userId;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer id;
+
+    @Column(name = "user_code", unique = true, length = 50)
+    private String userCode;
 
     @Column(name = "email", unique = true, nullable = false, length = 50)
     private String email;
