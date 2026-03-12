@@ -13,12 +13,11 @@ import lombok.*;
 @Builder
 public class CustomerProfile {
     @Id
-    @Column(name = "user_id")
-    private String userId;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer id;
 
     @OneToOne
-    @MapsId
-    @JoinColumn(name = "user_id")
+    @JoinColumn(name = "user_internal_id")
     private User user;
 
     @Column(name = "full_name", length = 100)

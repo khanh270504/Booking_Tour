@@ -1,18 +1,14 @@
 package com.example.bookingtour.services;
 
 import com.example.bookingtour.IServices.IBookingService;
-import com.example.bookingtour.dtos.internal.PricingResultDto; // Đã đổi tên chuẩn
+import com.example.bookingtour.dtos.internal.PricingResultDto;
 import com.example.bookingtour.dtos.request.booking.BookingCancelRequest;
 import com.example.bookingtour.dtos.request.booking.BookingCreateRequest;
 import com.example.bookingtour.dtos.request.booking.PassengerRequest;
 import com.example.bookingtour.dtos.request.payment.ManualPaymentRequest;
 import com.example.bookingtour.dtos.response.booking.BookingResponse;
 import com.example.bookingtour.dtos.response.payment.PaymentResponse;
-import com.example.bookingtour.entities.Booking;
-import com.example.bookingtour.entities.BookingPassenger;
-import com.example.bookingtour.entities.CustomerProfile;
-import com.example.bookingtour.entities.TourSchedule;
-import com.example.bookingtour.entities.User;
+import com.example.bookingtour.entities.*;
 import com.example.bookingtour.enums.BookingStatus;
 import com.example.bookingtour.enums.PassengerType;
 import com.example.bookingtour.enums.ScheduleStatus;
@@ -41,17 +37,18 @@ public class BookingServiceImpl implements IBookingService {
     private final BookingPassengerRepository bookingPassengerRepository;
     private final BookingRepository bookingRepository;
     private final CustomerProfileRepository profileRepository;
-
     private final PricingServiceImpl pricingService;
+    private final BookingStatusHistoryRepository statusHistoryRepository;
 
     @Override
     @Transactional
-    public BookingResponse createBooking(BookingCreateRequest request, String userId) {
+    public BookingResponse createBooking(BookingCreateRequest request, String userInternalId) {
         log.info("--- Khởi tạo Đơn hàng cho email: {} ---", request.getEmail());
 
-        // 1. Định danh User (Khách vãng lai hoặc đã login)
-        User user = (userId != null)
-                ? userRepository.findById(userId).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED))
+        // 1. Xác định User (Dùng ID Integer để tìm cho nhanh)
+        User user = (userInternalId != null)
+                ? userRepository.findById(Integer.parseInt(userInternalId))
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED))
                 : handleShadowUser(request);
 
         // 2. Check chỗ trống
@@ -59,95 +56,58 @@ public class BookingServiceImpl implements IBookingService {
                 .orElseThrow(() -> new AppException(ErrorCode.SCHEDULE_NOT_FOUND));
 
         if (schedule.getAvailableSlots() < request.getPassengers().size()) {
-            throw new AppException(ErrorCode.TOUR_FULL); // Đã thêm chữ THROW thần thánh vào đây!
+            throw new AppException(ErrorCode.TOUR_FULL);
         }
 
-        // 3. Gọi Thủ quỹ tính tiền
+        // 3. Tính tiền
         PricingResultDto pricing = pricingService.calculatePrice(schedule.getTour().getId(), request.getPassengers());
 
-        // 4. Lưu Booking
-        Booking booking = bookingRepository.save(Booking.builder()
+        // 4. Lưu Booking (Liên kết qua User Object - JPA tự lấy ID số để map)
+        Booking booking = Booking.builder()
                 .bookingCode(generateCode("BK"))
                 .user(user)
                 .schedule(schedule)
                 .status(BookingStatus.PENDING)
-                .totalOriginalPrice(pricing.getTotalOriginalPrice()) // Tiền gốc
-                .totalSurcharge(pricing.getTotalSurcharge())         // Phụ thu
-                .totalDiscount(pricing.getTotalDiscount())           // Giảm giá
-                .totalFinalPrice(pricing.getTotalFinalPrice())       // Chốt hạ
-                .build());
+                .totalOriginalPrice(pricing.getTotalOriginalPrice())
+                .totalSurcharge(pricing.getTotalSurcharge())
+                .totalDiscount(pricing.getTotalDiscount())
+                .totalFinalPrice(pricing.getTotalFinalPrice())
+                .build();
 
+        bookingRepository.save(booking);
+
+        // Ghi lịch sử trạng thái (Lần đầu: from null to PENDING)
+        saveStatusHistory(booking, null, BookingStatus.PENDING, "Khởi tạo đơn hàng mới");
+
+        // 5. Lưu danh sách khách và cập nhật kho
         List<BookingPassenger> savedPassengers = persistPassengers(request.getPassengers(), booking, pricing.getUnitPriceMap());
-
         updateInventory(schedule, -request.getPassengers().size());
 
-        log.info("=> Tạo đơn thành công! Mã Code: {}, Tổng tiền: {}", booking.getBookingCode(), booking.getTotalFinalPrice());
+        log.info("=> Tạo đơn thành công! Mã Code: {}, ID User: {}", booking.getBookingCode(), user.getId());
 
         return BookingResponse.fromBooking(booking, request.getCustomerProfile().getFullName(), savedPassengers);
     }
 
     private User handleShadowUser(BookingCreateRequest request) {
-        String guestId = generateCode("G");
-
-
-        User user = userRepository.save(User.builder()
-                .userId(guestId)
+        // Tạo User ảo (ID tự tăng, code G-... để hiển thị)
+        User user = User.builder()
+                .userCode(generateCode("G"))
                 .email(request.getEmail())
-              //  .roleName("USER")
                 .status(UserStatus.ACTIVE)
-                .build());
+                .build();
+        userRepository.save(user); // Trả về User đã có ID số từ Database
 
-        profileRepository.save(CustomerProfile.builder()
-                .userId(guestId)
+        // Tạo Profile (Liên kết qua ID số của User ngầm định)
+        CustomerProfile profile = CustomerProfile.builder()
+                .user(user)
                 .fullName(request.getCustomerProfile().getFullName())
                 .phone(request.getCustomerProfile().getPhone())
-                .build());
+                .build();
+        profileRepository.save(profile);
 
         return user;
     }
 
-    private String generateCode(String prefix) {
-        String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyMMddHHmmss"));
-        // Đổi thành System.currentTimeMillis() cho an toàn hơn nanoTime ở một số HĐH
-        return prefix + '-' + timestamp + '-' + System.currentTimeMillis() % 10000;
-    }
-
-    private void updateInventory(TourSchedule schedule, int delta) {
-        int newSlots = schedule.getAvailableSlots() + delta;
-
-        if (newSlots < 0) {
-            throw new AppException(ErrorCode.TOUR_FULL);
-        }
-
-        schedule.setAvailableSlots(newSlots);
-
-        if (newSlots == 0) {
-            schedule.setStatus(ScheduleStatus.FULL);
-        } else if (newSlots > 0 && schedule.getStatus() == ScheduleStatus.FULL) {
-            schedule.setStatus(ScheduleStatus.OPENING);
-        }
-
-        tourScheduleRepository.save(schedule);
-    }
-
-    private List<BookingPassenger> persistPassengers(List<PassengerRequest> requests, Booking booking, Map<PassengerType, BigDecimal> priceMap) {
-        List<BookingPassenger> passengers = requests.stream()
-                .map(req -> {
-                    PassengerType type = PassengerType.valueOf(req.getPassengerType().toUpperCase());
-
-                    return BookingPassenger.builder()
-                            .booking(booking)
-                            .fullName(req.getFullName())
-                            .gender(req.getGender())
-                            .birthDate(req.getBirthDate())
-                            .passengerType(type)
-                            .unitPrice(priceMap.get(type)) // Móc giá từ HashMap an toàn
-                            .build();
-                })
-                .toList();
-
-        return bookingPassengerRepository.saveAll(passengers);
-    }
     @Override
     public BookingResponse getBookingById(Integer bookingId) {
         Booking booking = bookingRepository.findById(bookingId)
@@ -155,8 +115,8 @@ public class BookingServiceImpl implements IBookingService {
 
         List<BookingPassenger> passengers = bookingPassengerRepository.findByBookingId(bookingId);
 
-        // Tự tay móc tên khách hàng từ bảng Profile
-        String customerName = profileRepository.findByUserId(booking.getUser().getUserId())
+        // Dùng ID số để tìm Profile cho nhanh
+        String customerName = profileRepository.findByUser_Id(booking.getUser().getId())
                 .map(CustomerProfile::getFullName)
                 .orElse("Unknown");
 
@@ -164,19 +124,22 @@ public class BookingServiceImpl implements IBookingService {
     }
 
     @Override
-    public List<BookingResponse> getBookingsByUser(String userId) {
-        String customerName = profileRepository.findByUserId(userId)
+    public List<BookingResponse> getBookingsByUser(String userInternalId) {
+        Integer id = Integer.parseInt(userInternalId);
+
+        String customerName = profileRepository.findByUser_Id(id)
                 .map(CustomerProfile::getFullName)
                 .orElse("Unknown");
 
-        // GỌI ĐÚNG CÁI HÀM BẠN VỪA VIẾT Ở ĐÂY NHÉ:
-        return bookingRepository.findByUserIdOrderByCreatedAtDesc(userId).stream()
+        // Tìm danh sách đơn hàng theo ID số
+        return bookingRepository.findByUserIdOrderByCreatedAtDesc(id).stream()
                 .map(booking -> {
                     List<BookingPassenger> passengers = bookingPassengerRepository.findByBookingId(booking.getId());
                     return BookingResponse.fromBooking(booking, customerName, passengers);
                 })
                 .toList();
     }
+
     @Override
     @Transactional
     public BookingResponse cancelBooking(BookingCancelRequest request) {
@@ -187,16 +150,17 @@ public class BookingServiceImpl implements IBookingService {
             throw new AppException(ErrorCode.BOOKING_STATUS_INVALID);
         }
 
-        // Tự tay lấy list khách ra đếm xem có bao nhiêu người để còn hoàn trả chỗ
         List<BookingPassenger> passengers = bookingPassengerRepository.findByBookingId(booking.getId());
-
-        // Trả lại chỗ trống cho Tour (cộng thêm vào)
         updateInventory(booking.getSchedule(), passengers.size());
 
+        BookingStatus oldStatus = booking.getStatus();
         booking.setStatus(BookingStatus.CANCELLED);
         bookingRepository.save(booking);
 
-        String customerName = profileRepository.findByUserId(booking.getUser().getUserId())
+        // Lưu lịch sử (from oldStatus to CANCELLED)
+        saveStatusHistory(booking, oldStatus, BookingStatus.CANCELLED, "Khách hàng hủy đơn");
+
+        String customerName = profileRepository.findByUser_Id(booking.getUser().getId())
                 .map(CustomerProfile::getFullName)
                 .orElse("Unknown");
 
@@ -209,14 +173,61 @@ public class BookingServiceImpl implements IBookingService {
         Booking booking = bookingRepository.findById(request.getBookingId())
                 .orElseThrow(() -> new AppException(ErrorCode.BOOKING_NOT_FOUND));
 
-        // Đổi trạng thái sang Đã thanh toán
+        BookingStatus oldStatus = booking.getStatus();
         booking.setStatus(BookingStatus.PAID);
         bookingRepository.save(booking);
+
+        // Lưu lịch sử thanh toán
+        saveStatusHistory(booking, oldStatus, BookingStatus.PAID,
+                "Xác nhận thanh toán thủ công (Mã GD: " + request.getTransactionCode() + ")");
 
         return PaymentResponse.builder()
                 .bookingId(booking.getId())
                 .status("SUCCESS")
                 .transactionCode(request.getTransactionCode())
                 .build();
+    }
+
+    // --- HÀM PHỤ TRỢ (HELPER METHODS) ---
+
+    private void saveStatusHistory(Booking booking, BookingStatus fromStatus, BookingStatus toStatus, String reason) {
+        BookingStatusHistory history = BookingStatusHistory.builder()
+                .booking(booking)
+                .fromStatus(fromStatus)
+                .toStatus(toStatus)
+                .reason(reason)
+                .build();
+        statusHistoryRepository.save(history);
+    }
+
+    private String generateCode(String prefix) {
+        String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyMMddHHmmss"));
+        return prefix + '-' + timestamp + '-' + System.currentTimeMillis() % 10000;
+    }
+
+    private void updateInventory(TourSchedule schedule, int delta) {
+        int newSlots = schedule.getAvailableSlots() + delta;
+        if (newSlots < 0) throw new AppException(ErrorCode.TOUR_FULL);
+        schedule.setAvailableSlots(newSlots);
+        if (newSlots == 0) schedule.setStatus(ScheduleStatus.FULL);
+        else if (newSlots > 0 && schedule.getStatus() == ScheduleStatus.FULL) schedule.setStatus(ScheduleStatus.OPENING);
+        tourScheduleRepository.save(schedule);
+    }
+
+    private List<BookingPassenger> persistPassengers(List<PassengerRequest> requests, Booking booking, Map<PassengerType, BigDecimal> priceMap) {
+        List<BookingPassenger> passengers = requests.stream()
+                .map(req -> {
+                    PassengerType type = PassengerType.valueOf(req.getPassengerType().toUpperCase());
+                    return BookingPassenger.builder()
+                            .booking(booking)
+                            .fullName(req.getFullName())
+                            .gender(req.getGender())
+                            .birthDate(req.getBirthDate())
+                            .passengerType(type)
+                            .unitPrice(priceMap.get(type))
+                            .build();
+                })
+                .toList();
+        return bookingPassengerRepository.saveAll(passengers);
     }
 }

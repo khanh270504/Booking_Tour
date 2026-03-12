@@ -11,7 +11,9 @@ import java.util.List;
 @Repository
 public interface CrmLeadRepository extends JpaRepository<CrmLead, Integer> {
 
-    @Query("SELECT c FROM CrmLead c WHERE c.assignedStaff.userId = :staffId")
-    List<CrmLead> getLeadsByStaff(@Param("staffId") String staffId);
+    @Query("SELECT c FROM CrmLead c WHERE c.assignedStaff.id = :staffId")
+    List<CrmLead> getLeadsByStaffId(@Param("staffId") Integer staffId);
 
+//    @Query("SELECT c FROM CrmLead c WHERE c.assignedStaff.user.userCode = :staffCode")
+//    List<CrmLead> findByStaffCode(@Param("staffCode") String staffCode);
 }

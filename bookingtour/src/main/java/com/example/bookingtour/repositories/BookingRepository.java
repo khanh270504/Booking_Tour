@@ -11,4 +11,4 @@ import java.util.List;
 public interface BookingRepository extends JpaRepository<Booking, Integer> {
 
     @Query("SELECT b FROM Booking b WHERE b.user.id = :userId ORDER BY b.createdAt DESC")
-    List<Booking> findByUserIdOrderByCreatedAtDesc(@Param("userId") String userId);}
+    List<Booking> findByUserIdOrderByCreatedAtDesc(@Param("userId") Integer userId);}
