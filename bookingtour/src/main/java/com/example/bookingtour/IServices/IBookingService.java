@@ -21,5 +21,4 @@ public interface IBookingService {
 
     BookingResponse cancelBooking(BookingCancelRequest request);
 
-    PaymentResponse processManualPayment(ManualPaymentRequest request);
 }

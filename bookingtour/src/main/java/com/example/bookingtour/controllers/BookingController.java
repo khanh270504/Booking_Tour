@@ -53,10 +53,4 @@ public class BookingController {
         return ResponseEntity.ok(response);
     }
 
-      @PostMapping("/manual-payment")
-    public ResponseEntity<PaymentResponse> processManualPayment(@RequestBody ManualPaymentRequest request) {
-        log.info("API: Xác nhận thanh toán thủ công cho đơn hàng ID: {}", request.getBookingId());
-        PaymentResponse response = bookingService.processManualPayment(request);
-        return ResponseEntity.ok(response);
-    }
 }
