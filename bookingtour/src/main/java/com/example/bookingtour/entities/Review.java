@@ -30,7 +30,7 @@ public class Review {
     private Booking booking;
 
     @Column(name = "rating")
-    private Integer rating; // 1-5 sao
+    private Integer rating;
 
     @Column(name = "comment", columnDefinition = "text")
     private String comment;
@@ -38,4 +38,10 @@ public class Review {
     @CreationTimestamp
     @Column(name = "created_at")
     private Instant createdAt;
+
+    @Column(name = "admin_reply", columnDefinition = "text")
+    private String adminReply;
+
+    @Column(name = "replied_at")
+    private Instant repliedAt;
 }

@@ -40,3 +40,12 @@ vnpay:
   hash-secret: ${VNPAY_HASH_SECRET}
   url: ${VNPAY_URL}
   return-url: ${VNPAY_RETURN_URL}
+
+jwt:
+  signerKey: ${JWT_SIGNER_KEY}
+  valid-duration: ${JWT_VALID_DURATION}
+  refreshable-duration: ${JWT_REFRESH_DURATION}
+
+admin:
+  username: ${ADMIN_USERNAME}
+  password: ${ADMIN_PASSWORD}

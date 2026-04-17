@@ -30,6 +30,9 @@ public class StaffProfile {
     @Column(name = "phone", length = 20)
     private String phone;
 
+    @Column(name = "position", length = 100)
+    private String position;
+
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "department_id")
     private Department department;

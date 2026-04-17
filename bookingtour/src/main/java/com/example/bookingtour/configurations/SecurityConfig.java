@@ -24,11 +24,11 @@ import java.util.List;
 public class SecurityConfig {
 
     private final String[] PUBLIC_ENDPOINTS = {
-            "/auth/login", "/auth/introspect", "/auth/logout", "/auth/refresh", "/auth/register", "/api/v1/**"
+            "/auth/login", "/auth/introspect", "/auth/logout", "/auth/refresh", "/auth/register"
     };
 
     @Autowired
-    //private CustomJwtDecoder customJwtDecoder;
+    private CustomJwtDecoder customJwtDecoder;
     @Value("FRONTEND_URL")
     private String fe_url;
     @Bean
@@ -36,7 +36,7 @@ public class SecurityConfig {
         http
                 .authorizeHttpRequests(request -> request
                         .requestMatchers(HttpMethod.POST, PUBLIC_ENDPOINTS).permitAll()
-                        .requestMatchers(HttpMethod.GET, PUBLIC_ENDPOINTS).permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/donVi").permitAll()
 
                         .anyRequest().authenticated()
                 )
@@ -51,14 +51,13 @@ public class SecurityConfig {
                     return config;
                 }))
                 .csrf(AbstractHttpConfigurer::disable)
-//                .oauth2ResourceServer(oauth -> oauth
-//                        .jwt(jwtConfigurer -> jwtConfigurer
-//                                .decoder(customJwtDecoder)
-//                                .jwtAuthenticationConverter(jwtAuthenticationConverter())
-//                        )
-//                        .authenticationEntryPoint(new JwtAuthenticationEntryPoint())
-//                )
-        ;
+                .oauth2ResourceServer(oauth -> oauth
+                        .jwt(jwtConfigurer -> jwtConfigurer
+                                .decoder(customJwtDecoder)
+                                .jwtAuthenticationConverter(jwtAuthenticationConverter())
+                        )
+                        .authenticationEntryPoint(new JwtAuthenticationEntryPoint())
+                );
 
         return http.build();
     }
