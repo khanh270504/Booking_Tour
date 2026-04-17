@@ -16,5 +16,6 @@ public class StaffUpdateRequest {
     private String phone;
     private String departmentId;
     private LocalDate hireDate;
+    private String position;
     private String status;
 }

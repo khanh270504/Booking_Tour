@@ -1,5 +1,6 @@
 package com.example.bookingtour.dtos.request.support;
 
+import com.example.bookingtour.enums.TicketPriority;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
@@ -13,5 +14,5 @@ public class SupportTicketCreateRequest {
     @NotBlank(message = "Nội dung không được để trống")
     private String description;
 
-    private String priority; // LOW, MEDIUM, HIGH
+    private TicketPriority priority; // LOW, MEDIUM, HIGH
 }
