@@ -8,7 +8,7 @@ public class InteractionLogRequest {
     private String leadId;
     private String userId;
 
-    private String interactionType; // CALL, EMAIL, MEETING
+    private String interactionType;
     private String note;
     private Instant nextActionDate;
 }

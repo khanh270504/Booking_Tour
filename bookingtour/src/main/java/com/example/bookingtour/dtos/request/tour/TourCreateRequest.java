@@ -15,12 +15,16 @@ public class TourCreateRequest {
     @NotBlank(message = "Tên tour không được để trống")
     private String name;
 
-    @NotBlank
-    private String tourType; // RESORT, ADVENTURE...
-
     private String description;
-
 
     @NotNull(message = "Lịch trình không được để trống")
     private List<Map<String, Object>> itinerary;
+
+    private String thumbnail;
+
+    private Integer minParticipants;
+
+    private String duration;
+
+    private String tourCode;
 }

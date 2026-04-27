@@ -1,33 +1,53 @@
 package com.example.bookingtour.IServices;
 
 import com.example.bookingtour.dtos.request.tour.*;
+import com.example.bookingtour.dtos.response.PageResponse;
 import com.example.bookingtour.dtos.response.tour.*;
+import org.springframework.data.domain.Pageable;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 public interface ITourService {
 
-    // Quản lý thông tin Tour chính
+    // --- Quản lý Tour chính ---
     TourResponse createTour(TourCreateRequest request);
+
     List<TourResponse> getAllTours();
+
     List<TourResponse> getAllToursForClient();
-    TourResponse getTourById(Integer id);
-    List<TourResponse> getToursByDestinationForClient(Integer destId);
+
     TourResponse getTourByIdForClient(Integer id);
+
     TourResponse updateTour(Integer id, TourCreateRequest request);
+
     void deleteTour(Integer id);
 
-    // Quản lý Lịch trình
+    // --- Quản lý Lịch trình (Schedules) ---
     ScheduleResponse createSchedule(ScheduleCreateRequest request);
+
     List<ScheduleResponse> getSchedulesByTour(Integer tourId);
+
     ScheduleResponse updateScheduleStatus(Integer scheduleId, String status);
 
-    // Quản lý Cấu hình giá
+    // --- Quản lý Giá
     PricingConfigResponse createPricing(PricingConfigRequest request);
-    List<PricingConfigResponse> getPricingByTour(Integer tourId);
 
-    // Quản lý Phụ phí
+    List<PricingConfigResponse> getPricingBySchedule(Integer scheduleId);
+
+    // --- Quản lý Phụ phí
     SurchargeResponse createSurcharge(SurchargeRequest request);
-    List<SurchargeResponse> getSurchargesByTour(Integer tourId);
+
+    List<SurchargeResponse> getSurchargesBySchedule(Integer scheduleId);
+
     void deleteSurcharge(Integer id);
+
+    // --- Tiện ích & Hình ảnh ---
+    List<DestinationResponse> getAllDestinations();
+
+    List<TourImageResponse> getImagesByTour(Integer tourId);
+
+    // --- TÌM KIẾM (Search) ---
+    PageResponse<TourResponse> searchTours(TourSearchRequest searchRequest, Pageable pageable);
+
 }

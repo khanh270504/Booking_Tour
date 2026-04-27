@@ -12,39 +12,40 @@ import java.time.Instant;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Getter
-@Setter
+@Builder
 public class CrmInteraction {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    // Tương tác với Lead (Khách tiềm năng)
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "lead_id")
     private CrmLead lead;
 
-    // HOẶC Tương tác với User cũ (Khách đã có tài khoản)
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
 
-    // Ai là người thực hiện tương tác này? (Nhân viên Sale)
-    @ManyToOne
-    @JoinColumn(name = "staff_id")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "staff_id", nullable = false)
     private User staff;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "interaction_type", length = 20)
-    private InteractionType interactionType; // CALL, MEETING, EMAIL, ZALO
+    @Column(name = "interaction_type", length = 20, nullable = false)
+    private InteractionType interactionType;
 
-    @Column(name = "note", columnDefinition = "text")
-    private String note; // Nội dung cuộc gọi/chat
+
+    @Column(name = "status", length = 20)
+    private String status;
+
+    @Column(name = "note", columnDefinition = "TEXT")
+    private String note;
 
     @Column(name = "next_action_date")
-    private Instant nextActionDate; // Lịch hẹn gọi lại
+    private Instant nextActionDate;
 
     @CreationTimestamp
-    @Column(name = "created_at")
+    @Column(name = "created_at", updatable = false)
     private Instant createdAt;
 }

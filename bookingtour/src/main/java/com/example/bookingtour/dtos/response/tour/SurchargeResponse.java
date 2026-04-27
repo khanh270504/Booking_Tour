@@ -14,7 +14,7 @@ import java.math.BigDecimal;
 @Builder
 public class SurchargeResponse {
     private Integer id;
-    private Integer tourId;
+    private Integer scheduleId;
     private String surchargeName;
     private BigDecimal amount;
     private Boolean isMandatory;
@@ -24,7 +24,7 @@ public class SurchargeResponse {
 
         return SurchargeResponse.builder()
                 .id(surcharge.getId())
-                .tourId(surcharge.getTour() != null ? surcharge.getTour().getId() : null)
+                .scheduleId(surcharge.getSchedule() != null ? surcharge.getSchedule().getId() : null)
                 .surchargeName(surcharge.getSurchargeName())
                 .amount(surcharge.getAmount())
                 .isMandatory(surcharge.getIsMandatory())

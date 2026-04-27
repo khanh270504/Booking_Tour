@@ -23,20 +23,30 @@ import java.util.List;
 @EnableMethodSecurity
 public class SecurityConfig {
 
-    private final String[] PUBLIC_ENDPOINTS = {
-            "/auth/login", "/auth/introspect", "/auth/logout", "/auth/refresh", "/auth/register"
+    private final String[] PUBLIC_GET_ENDPOINTS = {
+            "/api/v1/**", "/api/v1/tours/**",
+            "/api/v1/categories", "/api/v1/categories/**",
+            "/api/v1/reviews", "/api/v1/reviews/**"
+    };
+
+    private final String[] PUBLIC_POST_ENDPOINTS = {
+            "/auth/login", "/auth/introspect", "/auth/logout", "/auth/refresh", "/auth/register",
+            "/bookings"
     };
 
     @Autowired
     private CustomJwtDecoder customJwtDecoder;
-    @Value("FRONTEND_URL")
+
+    @Value("${FRONTEND_URL}")
     private String fe_url;
+
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .authorizeHttpRequests(request -> request
-                        .requestMatchers(HttpMethod.POST, PUBLIC_ENDPOINTS).permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/donVi").permitAll()
+                        .requestMatchers(HttpMethod.GET, PUBLIC_GET_ENDPOINTS).permitAll()
+
+                        .requestMatchers(HttpMethod.POST, PUBLIC_POST_ENDPOINTS).permitAll()
 
                         .anyRequest().authenticated()
                 )
@@ -70,7 +80,7 @@ public class SecurityConfig {
     @Bean
     JwtAuthenticationConverter jwtAuthenticationConverter() {
         JwtGrantedAuthoritiesConverter jwtGrantedAuthoritiesConverter = new JwtGrantedAuthoritiesConverter();
-        jwtGrantedAuthoritiesConverter.setAuthorityPrefix("");
+        jwtGrantedAuthoritiesConverter.setAuthorityPrefix("ROLE_");
         JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
         converter.setJwtGrantedAuthoritiesConverter(jwtGrantedAuthoritiesConverter);
         return converter;

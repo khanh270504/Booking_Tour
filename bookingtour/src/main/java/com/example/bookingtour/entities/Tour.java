@@ -13,7 +13,6 @@ import java.util.Map;
 
 @Entity
 @Table(name = "tours")
-@Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
@@ -27,15 +26,18 @@ public class Tour {
     @Column(name = "tour_code", unique = true)
     private String tourcode;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "destination_id")
     private Destination destination;
 
+    @Column(name = "thumbnail", length = 500)
+    private String thumbnail;
+
+    @Column(name = "min_participants")
+    private Integer minParticipants;
+
     @Column(name = "name")
     private String name;
-
-    @Column(name = "tour_type", length = 50)
-    private String tourType;
 
     @Column(name = "description", columnDefinition = "text")
     private String description;

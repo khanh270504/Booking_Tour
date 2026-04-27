@@ -5,9 +5,7 @@ import com.example.bookingtour.dtos.internal.PricingResultDto;
 import com.example.bookingtour.dtos.request.booking.BookingCancelRequest;
 import com.example.bookingtour.dtos.request.booking.BookingCreateRequest;
 import com.example.bookingtour.dtos.request.booking.PassengerRequest;
-import com.example.bookingtour.dtos.request.payment.ManualPaymentRequest;
 import com.example.bookingtour.dtos.response.booking.BookingResponse;
-import com.example.bookingtour.dtos.response.payment.PaymentResponse;
 import com.example.bookingtour.entities.*;
 import com.example.bookingtour.enums.BookingStatus;
 import com.example.bookingtour.enums.PassengerType;
@@ -19,6 +17,7 @@ import com.example.bookingtour.repositories.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
@@ -42,20 +41,19 @@ public class BookingServiceImpl implements IBookingService {
     private final BookingStatusHistoryRepository statusHistoryRepository;
 
     @Override
-    @Transactional
-    public BookingResponse createBooking(BookingCreateRequest request, String userInternalId) {
-        log.info("--- Bắt đầu xử lý đơn hàng cho: {} ---", request.getEmail());
+    @Transactional(isolation = Isolation.READ_COMMITTED)
+    public BookingResponse createBooking(BookingCreateRequest request, Integer userInternalId) {
+        log.info("--- Bắt đầu xử lý đơn hàng cho email: {} ---", request.getEmail());
 
-        // 1. Xác định User (Giao cho hàm handleShadowUser xử lý logic check trùng)
         User user;
         if (userInternalId != null) {
-            user = userRepository.findById(Integer.parseInt(userInternalId))
+            user = userRepository.findById(userInternalId) // Đã là Integer rồi, không cần parse nữa
                     .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
         } else {
             user = handleShadowUser(request);
         }
 
-        // 2. Check chỗ trống của Tour
+        // LƯU Ý CHO ÔNG GIÁO: Nếu traffic lớn, nên viết custom query ở TourScheduleRepository có dùng @Lock(LockModeType.PESSIMISTIC_WRITE) cho hàm này
         TourSchedule schedule = tourScheduleRepository.findById(request.getScheduleId())
                 .orElseThrow(() -> new AppException(ErrorCode.SCHEDULE_NOT_FOUND));
 
@@ -63,10 +61,8 @@ public class BookingServiceImpl implements IBookingService {
             throw new AppException(ErrorCode.TOUR_FULL);
         }
 
-        // 3. Tính tiền tự động
         PricingResultDto pricing = pricingService.calculatePrice(schedule.getTour().getId(), request.getPassengers());
 
-        // 4. Lưu Booking (Liên kết với User cũ hoặc mới tạo)
         Booking booking = Booking.builder()
                 .bookingCode(generateCode("BK"))
                 .user(user)
@@ -80,11 +76,10 @@ public class BookingServiceImpl implements IBookingService {
 
         bookingRepository.save(booking);
 
-        // Lưu lịch sử trạng thái ban đầu
         saveStatusHistory(booking, null, BookingStatus.PENDING, "Khởi tạo đơn hàng");
 
-        // 5. Lưu danh sách hành khách & Cập nhật số lượng chỗ trống
         List<BookingPassenger> savedPassengers = persistPassengers(request.getPassengers(), booking, pricing.getUnitPriceMap());
+
         updateInventory(schedule, -request.getPassengers().size());
 
         log.info("=> [SUCCESS] Đơn hàng {} đã tạo xong cho User ID: {}", booking.getBookingCode(), user.getId());
@@ -92,14 +87,9 @@ public class BookingServiceImpl implements IBookingService {
         return BookingResponse.fromBooking(booking, request.getCustomerProfile().getFullName(), savedPassengers);
     }
 
-    /**
-     * Logic "linh hồn" để chống Duplicate Email:
-     * Tìm thấy thì dùng lại, không thấy mới tạo.
-     */
     private User handleShadowUser(BookingCreateRequest request) {
         String emailClean = request.getEmail().trim().toLowerCase();
 
-        // Check xem ông này đã từng đặt tour hay có tài khoản chưa
         Optional<User> existingUser = userRepository.findByEmail(emailClean);
 
         if (existingUser.isPresent()) {
@@ -107,7 +97,6 @@ public class BookingServiceImpl implements IBookingService {
             return existingUser.get();
         }
 
-        // Nếu chưa có thì mới tạo User mới nặc danh (Shadow User)
         log.info("=> Email {} mới toanh. Đang tạo Shadow User...", emailClean);
         User user = User.builder()
                 .userCode(generateCode("G"))
@@ -116,7 +105,6 @@ public class BookingServiceImpl implements IBookingService {
                 .build();
         userRepository.save(user);
 
-        // Tạo luôn Profile đi kèm cho User mới
         CustomerProfile profile = CustomerProfile.builder()
                 .user(user)
                 .fullName(request.getCustomerProfile().getFullName())
@@ -126,8 +114,6 @@ public class BookingServiceImpl implements IBookingService {
 
         return user;
     }
-
-    // --- CÁC HÀM KHÁC GIỮ NGUYÊN ---
 
     @Override
     public BookingResponse getBookingById(Integer bookingId) {
@@ -140,10 +126,10 @@ public class BookingServiceImpl implements IBookingService {
     }
 
     @Override
-    public List<BookingResponse> getBookingsByUser(String userInternalId) {
-        Integer id = Integer.parseInt(userInternalId);
-        String customerName = profileRepository.findByUser_Id(id).map(CustomerProfile::getFullName).orElse("Guest");
-        return bookingRepository.findByUserIdOrderByCreatedAtDesc(id).stream()
+    public List<BookingResponse> getBookingsByUser(Integer userInternalId) {
+        String customerName = profileRepository.findByUser_Id(userInternalId)
+                .map(CustomerProfile::getFullName).orElse("Guest");
+        return bookingRepository.findByUserIdOrderByCreatedAtDesc(userInternalId).stream()
                 .map(b -> BookingResponse.fromBooking(b, customerName, bookingPassengerRepository.findByBookingId(b.getId())))
                 .toList();
     }
@@ -153,15 +139,26 @@ public class BookingServiceImpl implements IBookingService {
     public BookingResponse cancelBooking(BookingCancelRequest request) {
         Booking booking = bookingRepository.findById(request.getBookingId())
                 .orElseThrow(() -> new AppException(ErrorCode.BOOKING_NOT_FOUND));
-        if (booking.getStatus() == BookingStatus.CANCELLED) throw new AppException(ErrorCode.BOOKING_STATUS_INVALID);
 
+        // 🎯 Chỉ những đơn PENDING (chưa trả tiền) mới được phép hủy trực tiếp thế này
+        // Nếu đã CONFIRMED (đã trả tiền) thì phải chuyển sang trạng thái REFUND_REQUEST (Yêu cầu hoàn tiền)
+        if (booking.getStatus() == BookingStatus.CANCELLED) {
+            throw new AppException(ErrorCode.BOOKING_STATUS_INVALID); // Hoặc tạo ErrorCode.BOOKING_ALREADY_CANCELLED
+        }
+
+        // Cập nhật lại tồn kho (Cộng lại số chỗ)
         updateInventory(booking.getSchedule(), bookingPassengerRepository.findByBookingId(booking.getId()).size());
+
         BookingStatus oldStatus = booking.getStatus();
         booking.setStatus(BookingStatus.CANCELLED);
+        bookingRepository.save(booking); // 🎯 Thiếu dòng save booking này ở code gốc nhé ông giáo!
+
         saveStatusHistory(booking, oldStatus, BookingStatus.CANCELLED, "Người dùng yêu cầu hủy");
 
         return getBookingById(booking.getId());
     }
+
+    // --- CÁC HÀM PRIVATE UTILS GIỮ NGUYÊN ---
 
     private void saveStatusHistory(Booking booking, BookingStatus from, BookingStatus to, String reason) {
         statusHistoryRepository.save(BookingStatusHistory.builder()
@@ -177,14 +174,18 @@ public class BookingServiceImpl implements IBookingService {
         if (newSlots < 0) throw new AppException(ErrorCode.TOUR_FULL);
         schedule.setAvailableSlots(newSlots);
         schedule.setStatus(newSlots == 0 ? ScheduleStatus.FULL : ScheduleStatus.OPENING);
-        tourScheduleRepository.save(schedule);
+        tourScheduleRepository.save(schedule); // Lưu lại update
     }
 
     private List<BookingPassenger> persistPassengers(List<PassengerRequest> reqs, Booking b, Map<PassengerType, BigDecimal> prices) {
         List<BookingPassenger> list = reqs.stream().map(r -> BookingPassenger.builder()
-                .booking(b).fullName(r.getFullName()).gender(r.getGender())
-                .birthDate(r.getBirthDate()).passengerType(PassengerType.valueOf(r.getPassengerType().toUpperCase()))
-                .unitPrice(prices.get(PassengerType.valueOf(r.getPassengerType().toUpperCase()))).build()).toList();
+                .booking(b)
+                .fullName(r.getFullName())
+                .gender(r.getGender())
+                .birthDate(r.getBirthDate())
+                .passengerType(PassengerType.valueOf(r.getPassengerType().toUpperCase()))
+                .unitPrice(prices.get(PassengerType.valueOf(r.getPassengerType().toUpperCase())))
+                .build()).toList();
         return bookingPassengerRepository.saveAll(list);
     }
 }

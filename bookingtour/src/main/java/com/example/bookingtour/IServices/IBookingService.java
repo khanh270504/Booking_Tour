@@ -10,13 +10,13 @@ import java.util.List;
 
 public interface IBookingService {
 
-    BookingResponse createBooking(BookingCreateRequest request, String userId);
+    BookingResponse createBooking(BookingCreateRequest request, Integer userId);
 
 
     BookingResponse getBookingById(Integer bookingId);
 
 
-    List<BookingResponse> getBookingsByUser(String userId);
+    List<BookingResponse> getBookingsByUser(Integer userId);
 
 
     BookingResponse cancelBooking(BookingCancelRequest request);

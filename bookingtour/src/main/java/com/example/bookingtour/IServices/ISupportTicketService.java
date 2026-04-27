@@ -1,4 +1,4 @@
-package com.example.bookingtour.services;
+package com.example.bookingtour.IServices;
 
 import com.example.bookingtour.dtos.request.support.SupportTicketCreateRequest;
 import com.example.bookingtour.dtos.request.support.SupportTicketProcessRequest;

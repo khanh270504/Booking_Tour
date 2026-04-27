@@ -6,12 +6,10 @@ import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.Instant;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "tour_schedules")
-@Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
@@ -22,7 +20,7 @@ public class TourSchedule {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "tour_id")
     private Tour tour;
 
@@ -32,7 +30,9 @@ public class TourSchedule {
     @Column(name = "return_date")
     private LocalDateTime returnDate;
 
-    // Số chỗ còn lại (Atomic Update sẽ trừ trực tiếp vào cột này)
+    @Column(name = "max_slots", nullable = false)
+    private Integer maxSlots;
+
     @Column(name = "available_slots", nullable = false)
     private Integer availableSlots;
 
@@ -43,4 +43,10 @@ public class TourSchedule {
     @CreationTimestamp
     @Column(name = "created_at")
     private Instant createdAt;
+
+    @Column(name = "departure_location")
+    private String departureLocation;
+
+    @Column(name = "schedule_code", unique = true)
+    private String scheduleCode;
 }
