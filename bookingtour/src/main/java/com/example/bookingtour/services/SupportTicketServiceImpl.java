@@ -13,7 +13,7 @@ import com.example.bookingtour.repositories.BookingRepository;
 import com.example.bookingtour.repositories.CustomerProfileRepository;
 import com.example.bookingtour.repositories.StaffProfileRepository;
 import com.example.bookingtour.repositories.SupportTicketRepository;
-import com.example.bookingtour.services.ISupportTicketService;
+import com.example.bookingtour.IServices.ISupportTicketService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -88,15 +88,12 @@ public class SupportTicketServiceImpl implements ISupportTicketService {
         SupportTicket ticket = ticketRepository.findById(ticketId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy Ticket"));
 
-
         StaffProfile staff = staffRepository.findByUser_Id(adminId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy hồ sơ Nhân viên"));
-
 
         ticket.setAssignedStaff(staff);
         ticket.setStatus(request.getStatus());
         ticket.setAdminResponse(request.getResponseMessage());
-
 
         if (request.getStatus() == TicketStatus.CLOSED) {
             ticket.setClosedAt(Instant.now());

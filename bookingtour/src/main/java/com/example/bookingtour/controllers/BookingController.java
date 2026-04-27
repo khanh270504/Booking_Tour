@@ -3,13 +3,14 @@ package com.example.bookingtour.controllers;
 import com.example.bookingtour.IServices.IBookingService;
 import com.example.bookingtour.dtos.request.booking.BookingCancelRequest;
 import com.example.bookingtour.dtos.request.booking.BookingCreateRequest;
-import com.example.bookingtour.dtos.request.payment.ManualPaymentRequest;
 import com.example.bookingtour.dtos.response.booking.BookingResponse;
-import com.example.bookingtour.dtos.response.payment.PaymentResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -22,13 +23,25 @@ public class BookingController {
 
     private final IBookingService bookingService;
 
+    private Integer getCurrentUserIdSafely() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.isAuthenticated() && auth.getPrincipal() instanceof Jwt) {
+            Jwt jwt = (Jwt) auth.getPrincipal();
+            Long userId = jwt.getClaim("userId");
+            return userId != null ? userId.intValue() : null;
+        }
+        return null;
+    }
+
+    // 1. TẠO BOOKING
     @PostMapping
     public ResponseEntity<BookingResponse> createBooking(
-            @RequestBody BookingCreateRequest request,
-            @RequestParam(required = false) String userId) {
+            @RequestBody BookingCreateRequest request) {
 
-        log.info("API: Nhận yêu cầu tạo Booking cho email {}", request.getEmail());
-        BookingResponse response = bookingService.createBooking(request, userId);
+        Integer currentUserId = getCurrentUserIdSafely();
+        log.info("API: Nhận yêu cầu tạo Booking cho email {}. UserId: {}", request.getEmail(), currentUserId);
+
+        BookingResponse response = bookingService.createBooking(request, currentUserId);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
@@ -39,18 +52,27 @@ public class BookingController {
         return ResponseEntity.ok(response);
     }
 
-       @GetMapping("/user/{userId}")
-    public ResponseEntity<List<BookingResponse>> getBookingsByUser(@PathVariable String userId) {
-        log.info("API: Lấy danh sách đơn hàng của User ID: {}", userId);
-        List<BookingResponse> responses = bookingService.getBookingsByUser(userId);
+
+    @GetMapping("/me")
+    public ResponseEntity<List<BookingResponse>> getMyBookings() {
+        Integer currentUserId = getCurrentUserIdSafely();
+        if (currentUserId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build(); // Chưa đăng nhập thì cút!
+        }
+
+        log.info("API: Lấy danh sách đơn hàng của User ID: {}", currentUserId);
+        List<BookingResponse> responses = bookingService.getBookingsByUser(currentUserId);
         return ResponseEntity.ok(responses);
     }
 
-      @PostMapping("/cancel")
+    // 4. HỦY ĐƠN
+    @PostMapping("/cancel")
     public ResponseEntity<BookingResponse> cancelBooking(@RequestBody BookingCancelRequest request) {
-        log.info("API: Nhận yêu cầu hủy đơn hàng ID: {}", request.getBookingId());
+        // Trong thực tế, service phải check xem currentUserId có đúng là chủ của đơn này không mới cho hủy nhé!
+        Integer currentUserId = getCurrentUserIdSafely();
+        log.info("API: User {} yêu cầu hủy đơn hàng ID: {}", currentUserId, request.getBookingId());
+
         BookingResponse response = bookingService.cancelBooking(request);
         return ResponseEntity.ok(response);
     }
-
 }

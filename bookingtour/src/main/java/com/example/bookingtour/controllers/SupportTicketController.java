@@ -4,12 +4,13 @@ import com.example.bookingtour.dtos.request.support.SupportTicketCreateRequest;
 import com.example.bookingtour.dtos.request.support.SupportTicketProcessRequest;
 import com.example.bookingtour.dtos.response.support.SupportTicketResponse;
 import com.example.bookingtour.enums.TicketStatus;
-import com.example.bookingtour.services.ISupportTicketService;
+import com.example.bookingtour.IServices.ISupportTicketService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -27,7 +28,15 @@ public class SupportTicketController {
         if (authentication == null || !authentication.isAuthenticated() || "anonymousUser".equals(authentication.getPrincipal())) {
             throw new RuntimeException("Vui lòng đăng nhập để thực hiện chức năng này");
         }
-        return Integer.parseInt(authentication.getName());
+        if (authentication instanceof JwtAuthenticationToken jwtAuth) {
+            Object userIdObj = jwtAuth.getToken().getClaims().get("userId");
+            if (userIdObj != null) {
+                return ((Number) userIdObj).intValue();
+            }
+        }
+
+        // 3. Chốt chặn cuối cùng nếu Token bị móp méo
+        throw new RuntimeException("Token không hợp lệ hoặc thiếu thông tin ID");
     }
 
     @PostMapping

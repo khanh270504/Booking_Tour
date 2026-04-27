@@ -8,8 +8,8 @@ import java.math.BigDecimal;
 
 @Data
 public class SurchargeRequest {
-    @NotNull(message = "Thiếu ID Tour")
-    private Integer tourId;
+    @NotNull(message = "Giá phải thuộc về một lịch trình cụ thể (Schedule ID)")
+    private Integer scheduleId;
 
     @NotBlank(message = "Tên phụ thu không được để trống")
     private String surchargeName;
@@ -19,5 +19,5 @@ public class SurchargeRequest {
     private BigDecimal amount;
 
     @NotNull
-    private Boolean isMandatory; // Bắt buộc hay Tùy chọn
+    private Boolean isMandatory;
 }

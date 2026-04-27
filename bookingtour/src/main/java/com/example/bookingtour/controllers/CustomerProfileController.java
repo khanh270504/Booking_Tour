@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -20,10 +21,17 @@ public class CustomerProfileController {
 
     private Integer getCurrentUserId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
         if (authentication == null || !authentication.isAuthenticated() || "anonymousUser".equals(authentication.getPrincipal())) {
             throw new RuntimeException("Vui lòng đăng nhập");
         }
-        return Integer.parseInt(authentication.getName());
+        if (authentication.getPrincipal() instanceof Jwt) {
+            Jwt jwt = (Jwt) authentication.getPrincipal();
+            Long userId = jwt.getClaim("userId");
+            return userId != null ? userId.intValue() : null;
+        }
+
+        throw new RuntimeException("Không tìm thấy UserId trong Token");
     }
 
     @GetMapping("/me")

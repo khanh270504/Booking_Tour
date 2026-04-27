@@ -7,27 +7,27 @@ import java.math.BigDecimal;
 
 @Entity
 @Table(name = "tour_surcharges")
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
 @Getter
 @Setter
+@NoArgsConstructor
+@AllArgsConstructor
 @Builder
 public class TourSurcharge {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @ManyToOne
-    @JoinColumn(name = "tour_id")
-    private Tour tour;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "schedule_id", nullable = false)
+    private TourSchedule schedule;
 
-    @Column(name = "surcharge_name", length = 100)
-    private String surchargeName; // VD: Phòng đơn
+    @Column(name = "surcharge_name", length = 100, nullable = false)
+    private String surchargeName;
 
-    @Column(name = "amount")
+    @Column(name = "amount", nullable = false)
     private BigDecimal amount;
 
     @Column(name = "is_mandatory")
-    private Boolean isMandatory; // Bắt buộc hay không
+    private Boolean isMandatory;
 }

@@ -7,33 +7,27 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
 public class PricingConfigResponse {
-    private Integer tourId;
     private Integer id;
+    private Integer scheduleId;
     private String passengerType;
     private BigDecimal price;
     private String currency;
-    private LocalDate effectiveDate;
 
     public static PricingConfigResponse fromPricingConfig(TourPricingConfig config) {
         if (config == null) return null;
+
         return PricingConfigResponse.builder()
                 .id(config.getId())
-
-                .tourId(config.getTour() != null ? config.getTour().getId() : null)
-
+                .scheduleId(config.getSchedule() != null ? config.getSchedule().getId() : null)
                 .passengerType(config.getPassengerType() != null ? config.getPassengerType().name() : null)
-
                 .price(config.getPrice())
                 .currency(config.getCurrency())
-                .effectiveDate(config.getEffectiveDate())
                 .build();
     }
-
 }
