@@ -30,8 +30,9 @@ public class SecurityConfig {
     };
 
     private final String[] PUBLIC_POST_ENDPOINTS = {
-            "/auth/login", "/auth/introspect", "/auth/logout", "/auth/refresh", "/auth/register",
-            "/bookings"
+            "/auth/login", "/auth/introspect",
+            "/auth/logout", "/auth/refresh", "/auth/register",
+            "/api/v1/bookings", "/api/v1/payments/**"
     };
 
     @Autowired
@@ -45,8 +46,9 @@ public class SecurityConfig {
         http
                 .authorizeHttpRequests(request -> request
                         .requestMatchers(HttpMethod.GET, PUBLIC_GET_ENDPOINTS).permitAll()
-
                         .requestMatchers(HttpMethod.POST, PUBLIC_POST_ENDPOINTS).permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/bookings/lookup").permitAll()
+                        .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
 
                         .anyRequest().authenticated()
                 )

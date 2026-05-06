@@ -6,7 +6,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.List;
 
 @Data
@@ -18,8 +18,8 @@ public class ScheduleResponse {
     private Integer tourId;
     private String tourName;
     private String scheduleCode;
-    private LocalDateTime departureDate;
-    private LocalDateTime returnDate;
+    private LocalDate departureDate;
+    private LocalDate returnDate;
     private String departureLocation;
     private Integer maxSlots;
     private Integer availableSlots;
@@ -42,6 +42,7 @@ public class ScheduleResponse {
                 .maxSlots(schedule.getMaxSlots())
                 .availableSlots(schedule.getAvailableSlots())
                 .status(schedule.getStatus() != null ? schedule.getStatus().name() : null)
+
                 .build();
     }
 }

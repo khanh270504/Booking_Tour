@@ -40,4 +40,7 @@ public class CustomerProfile {
 
     @Column(name = "loyalty_points")
     private Integer loyaltyPoints = 0;
+
+    @Column(name = "email", unique = true)
+    private String email;
 }

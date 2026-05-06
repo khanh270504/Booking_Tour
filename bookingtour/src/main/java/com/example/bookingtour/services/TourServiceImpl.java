@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.data.domain.Pageable;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -120,44 +121,6 @@ public class TourServiceImpl implements ITourService {
                 .collect(Collectors.toList());
     }
 
-    @Override
-    @Transactional
-    public ScheduleResponse createSchedule(ScheduleCreateRequest request) {
-        if (request.getReturnDate().isBefore(request.getDepartureDate())) {
-            throw new AppException(ErrorCode.INVALID_DATE_RANGE);
-        }
-
-        Tour tour = tourRepository.findById(request.getTourId())
-                .orElseThrow(() -> new AppException(ErrorCode.TOUR_NOT_FOUND));
-
-        TourSchedule schedule = TourSchedule.builder()
-                .tour(tour)
-                .departureDate(request.getDepartureDate())
-                .returnDate(request.getReturnDate())
-                .maxSlots(request.getMaxSlots())
-                .availableSlots(request.getMaxSlots())
-                .status(ScheduleStatus.OPENING)
-                .build();
-
-        return ScheduleResponse.fromSchedule(scheduleRepository.save(schedule));
-    }
-    @Override
-    @Transactional
-    public ScheduleResponse updateScheduleStatus(Integer scheduleId, String status) {
-        TourSchedule schedule = scheduleRepository.findById(scheduleId)
-                .orElseThrow(() -> new AppException(ErrorCode.SCHEDULE_NOT_FOUND));
-
-        try {
-
-            ScheduleStatus newStatus = ScheduleStatus.valueOf(status.toUpperCase());
-            schedule.setStatus(newStatus);
-
-            log.info("Đã cập nhật trạng thái lịch trình ID {} sang {}", scheduleId, newStatus);
-        } catch (IllegalArgumentException e) {
-            throw new AppException(ErrorCode.INVALID_STATUS);
-        }
-        return ScheduleResponse.fromSchedule(scheduleRepository.save(schedule));
-    }
 
     @Override
     public List<DestinationResponse> getAllDestinations() {
@@ -185,11 +148,7 @@ public class TourServiceImpl implements ITourService {
                 .collect(Collectors.toList());
     }
 
-    @Override
-    public List<ScheduleResponse> getSchedulesByTour(Integer tourId) {
-        return scheduleRepository.findByTourId(tourId).stream()
-                .map(ScheduleResponse::fromSchedule).collect(Collectors.toList());
-    }
+
 
     @Override
     @Transactional
@@ -197,59 +156,6 @@ public class TourServiceImpl implements ITourService {
         Tour tour = tourRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.TOUR_NOT_FOUND));
         tour.setStatus(TourStatus.INACTIVE);
         tourRepository.save(tour);
-    }
-    @Override
-    public List<PricingConfigResponse> getPricingBySchedule(Integer scheduleId) {
-        return pricingRepository.findByScheduleId(scheduleId).stream()
-                .map(PricingConfigResponse::fromPricingConfig)
-                .collect(Collectors.toList());
-    }
-    @Override
-    public List<SurchargeResponse> getSurchargesBySchedule(Integer scheduleId) {
-        return surchargeRepository.findByScheduleId(scheduleId).stream()
-                .map(SurchargeResponse::fromSurcharge)
-                .collect(Collectors.toList());
-    }
-    @Override
-    @Transactional
-    public PricingConfigResponse createPricing(PricingConfigRequest request) {
-        // Tìm Schedule thay vì tìm Tour
-        TourSchedule schedule = scheduleRepository.findById(request.getScheduleId())
-                .orElseThrow(() -> new AppException(ErrorCode.SCHEDULE_NOT_FOUND));
-
-        TourPricingConfig pricing = TourPricingConfig.builder()
-                .schedule(schedule) // Map vào Schedule
-                .passengerType(request.getPassengerType())
-                .price(request.getPrice())
-                .currency(request.getCurrency())
-                .build();
-
-        return PricingConfigResponse.fromPricingConfig(pricingRepository.save(pricing));
-    }
-    @Override
-    @Transactional
-    public SurchargeResponse createSurcharge(SurchargeRequest request) {
-        TourSchedule schedule = scheduleRepository.findById(request.getScheduleId())
-                .orElseThrow(() -> new AppException(ErrorCode.SCHEDULE_NOT_FOUND));
-
-        TourSurcharge surcharge = TourSurcharge.builder()
-                .schedule(schedule)
-                .surchargeName(request.getSurchargeName())
-                .amount(request.getAmount())
-                .isMandatory(request.getIsMandatory())
-                .build();
-
-        return SurchargeResponse.fromSurcharge(surchargeRepository.save(surcharge));
-    }
-
-    @Override
-    @Transactional
-    public void deleteSurcharge(Integer id) {
-        if (!surchargeRepository.existsById(id)) {
-            throw new AppException(ErrorCode.SURCHARGE_NOT_FOUND);
-        }
-        surchargeRepository.deleteById(id);
-        log.warn("Đã xóa phụ phí ID: {}", id);
     }
 
     @Override
@@ -273,5 +179,9 @@ public class TourServiceImpl implements ITourService {
                 .totalElements(tourPage.getTotalElements())
                 .data(tourResponses)
                 .build();
+    }
+    private String generateCode(Tour tour) {
+        return tour.getName().toUpperCase().replaceAll("\\s+", "")
+                + "_" + LocalDate.now().getMonthValue();
     }
 }

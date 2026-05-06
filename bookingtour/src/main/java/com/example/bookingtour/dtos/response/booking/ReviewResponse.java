@@ -18,10 +18,12 @@ public class ReviewResponse {
     private String adminReply;
     private Instant repliedAt;
 
-    public static ReviewResponse fromReview(Review review, String customerName) {
+    public static ReviewResponse fromReview(Review review) {
         return ReviewResponse.builder()
                 .id(review.getId())
-                .customerName(customerName)
+                .customerName(review.getBooking() != null
+                        ? review.getBooking().getContactName()
+                        : null)
                 .rating(review.getRating())
                 .comment(review.getComment())
                 .createdAt(review.getCreatedAt())

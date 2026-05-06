@@ -6,7 +6,7 @@ import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.Instant;
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 
 @Entity
 @Table(name = "tour_schedules")
@@ -25,10 +25,10 @@ public class TourSchedule {
     private Tour tour;
 
     @Column(name = "departure_date", nullable = false)
-    private LocalDateTime departureDate;
+    private LocalDate departureDate;
 
     @Column(name = "return_date")
-    private LocalDateTime returnDate;
+    private LocalDate returnDate;
 
     @Column(name = "max_slots", nullable = false)
     private Integer maxSlots;

@@ -1,6 +1,7 @@
 package com.example.bookingtour.dtos.request.booking;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -17,12 +18,11 @@ public class PassengerRequest {
     @NotBlank(message = "Tên hành khách không được để trống")
     private String fullName;
 
-    // "ADULT" hoặc "CHILD"
     @NotBlank(message = "Loại hành khách không được để trống")
     private String passengerType;
 
     private String gender;
 
-    @NotBlank
+    @NotNull(message = "Ngày sinh không được để trống")
     private LocalDate birthDate;
 }

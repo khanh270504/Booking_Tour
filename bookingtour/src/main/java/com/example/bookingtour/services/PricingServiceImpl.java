@@ -34,7 +34,6 @@ public class PricingServiceImpl implements IPricingService {
     public PricingResultDto calculatePrice(Integer scheduleId, List<PassengerRequest> passengers) {
         log.info("--- Bắt đầu tính giá cho Lịch trình (Schedule) ID: {} ---", scheduleId);
 
-        // 1. Lấy bảng giá của Lịch trình này
         List<TourPricingConfig> pricingConfigs = pricingRepository.findByScheduleId(scheduleId);
         if (pricingConfigs.isEmpty()) {
             throw new AppException(ErrorCode.PRICING_NOT_FOUND);

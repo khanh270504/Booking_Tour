@@ -7,6 +7,7 @@ import org.hibernate.annotations.CreationTimestamp;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.LocalDate;
 
 @Entity
 @Table(name = "bookings")
@@ -26,8 +27,8 @@ public class Booking {
     private String bookingCode;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
-    private User user;
+    @JoinColumn(name = "customer_id")
+    private CustomerProfile  customer;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "schedule_id")
@@ -57,5 +58,29 @@ public class Booking {
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private Instant createdAt;
+
+    @Column(name = "tour_name_snapshot", length = 255)
+    private String tourNameSnapshot;
+    @Column(name = "departure_date_snapshot")
+    private LocalDate departureDateSnapshot;
+
+    @Column(name = "departure_location_snapshot", length = 255)
+    private String departureLocationSnapshot;
+
+    @Column(name = "note", length = 500)
+    private String note;
+
+    @Column(name = "contact_name", nullable = false)
+    private String contactName;
+
+    @Column(name = "contact_phone", nullable = false)
+    private String contactPhone;
+
+    @Column(name = "contact_email", nullable = false)
+    private String contactEmail;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "created_by")
+    private User createdBy;
 
 }

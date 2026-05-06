@@ -1,4 +1,4 @@
-package com.example.bookingtour.services; // Giữ nguyên package theo file của ông
+package com.example.bookingtour.services;
 
 import com.example.bookingtour.IServices.IReviewService;
 import com.example.bookingtour.dtos.request.booking.AdminReplyRequest;
@@ -11,8 +11,7 @@ import com.example.bookingtour.enums.BookingStatus;
 import com.example.bookingtour.exceptions.AppException;
 import com.example.bookingtour.exceptions.ErrorCode;
 import com.example.bookingtour.repositories.BookingRepository;
-import com.example.bookingtour.repositories.CustomerProfileRepository;
-import com.example.bookingtour.repositories.ReviewRepository;
+import com.example.bookingtour.repositories.ReviewRepository; // 🎯 Đã xóa CustomerProfileRepository vì không còn cần thiết
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -30,50 +29,47 @@ public class ReviewServiceImpl implements IReviewService {
 
     ReviewRepository reviewRepository;
     BookingRepository bookingRepository;
-    CustomerProfileRepository profileRepository;
 
     @Override
     @Transactional
     public ReviewResponse createReview(ReviewCreateRequest request, String userInternalId) {
         Integer userId = Integer.parseInt(userInternalId);
+
         Booking booking = bookingRepository.findById(request.getBookingId())
                 .orElseThrow(() -> new AppException(ErrorCode.BOOKING_NOT_FOUND));
-        if (!booking.getUser().getId().equals(userId)) {
+
+        CustomerProfile profile = booking.getCustomer();
+        if (profile == null || profile.getUser() == null || !profile.getUser().getId().equals(userId)) {
             throw new AppException(ErrorCode.UNAUTHORIZED_ACTION);
         }
+
         if (booking.getStatus() != BookingStatus.COMPLETED) {
             throw new AppException(ErrorCode.REVIEW_NOT_ALLOWED);
         }
+
         if (reviewRepository.existsByBooking(booking)) {
             throw new AppException(ErrorCode.REVIEW_ALREADY_EXISTS);
         }
 
         Review review = new Review();
         review.setBooking(booking);
-        review.setUser(booking.getUser());
+        review.setUser(profile.getUser());
         review.setTour(booking.getSchedule().getTour());
         review.setRating(request.getRating());
         review.setComment(request.getComment());
 
         reviewRepository.save(review);
 
-        String customerName = profileRepository.findByUser_Id(userId)
-                .map(CustomerProfile::getFullName)
-                .orElse("Khách hàng ẩn danh");
-
-        return ReviewResponse.fromReview(review, customerName);
+        return ReviewResponse.fromReview(review);
     }
 
     @Override
     public List<ReviewResponse> getReviewsByTour(Integer tourId, Integer rating) {
         List<Review> reviews = reviewRepository.findByTourWithFilter(tourId, rating);
 
-        return reviews.stream().map(review -> {
-            String customerName = profileRepository.findByUser_Id(review.getUser().getId())
-                    .map(CustomerProfile::getFullName)
-                    .orElse("Khách hàng ẩn danh");
-            return ReviewResponse.fromReview(review, customerName);
-        }).collect(Collectors.toList());
+        return reviews.stream()
+                .map(ReviewResponse::fromReview)
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -83,7 +79,7 @@ public class ReviewServiceImpl implements IReviewService {
                 .orElseThrow(() -> new AppException(ErrorCode.REVIEW_NOT_FOUND));
 
         if (review.getAdminReply() != null) {
-            throw new AppException(ErrorCode.REVIEW_ALREADY_REPLIED); // Báo lỗi: Đã có câu trả lời
+            throw new AppException(ErrorCode.REVIEW_ALREADY_REPLIED);
         }
 
         review.setAdminReply(request.getReply());
@@ -91,10 +87,6 @@ public class ReviewServiceImpl implements IReviewService {
 
         reviewRepository.save(review);
 
-        String customerName = profileRepository.findByUser_Id(review.getUser().getId())
-                .map(CustomerProfile::getFullName)
-                .orElse("Khách hàng ẩn danh");
-
-        return ReviewResponse.fromReview(review, customerName);
+        return ReviewResponse.fromReview(review);
     }
 }

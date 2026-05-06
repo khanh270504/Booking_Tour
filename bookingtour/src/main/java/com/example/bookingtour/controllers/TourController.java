@@ -1,5 +1,6 @@
 package com.example.bookingtour.controllers;
 
+import com.example.bookingtour.IServices.IScheduleService;
 import com.example.bookingtour.IServices.ITourService;
 import com.example.bookingtour.dtos.request.tour.*;
 import com.example.bookingtour.dtos.response.ApiResponse;
@@ -23,7 +24,7 @@ import java.util.List;
 public class TourController {
 
     private final ITourService tourService;
-
+    private final IScheduleService scheduleService;
 
     @GetMapping("/tours")
     public ApiResponse<List<TourResponse>> getAllToursForClient() {
@@ -50,7 +51,7 @@ public class TourController {
     @GetMapping("/tours/{id}/pricing")
     public ApiResponse<List<PricingConfigResponse>> getTourPricing(@PathVariable Integer id) {
         return ApiResponse.<List<PricingConfigResponse>>builder()
-                .result(tourService.getPricingBySchedule(id))
+                .result(scheduleService.getPricingBySchedule(id))
                 .build();
     }
 
@@ -58,7 +59,14 @@ public class TourController {
     @GetMapping("/tours/{id}/schedules")
     public ApiResponse<List<ScheduleResponse>> getTourSchedules(@PathVariable Integer id) {
         return ApiResponse.<List<ScheduleResponse>>builder()
-                .result(tourService.getSchedulesByTour(id))
+                .result(scheduleService.getSchedulesByTourId(id))
+                .build();
+    }
+
+    @GetMapping("/schedules/{id}")
+    public ApiResponse<ScheduleResponse> getScheduleDetail(@PathVariable Integer id) {
+        return ApiResponse.<ScheduleResponse>builder()
+                .result(scheduleService.getScheduleById(id))
                 .build();
     }
 
@@ -96,7 +104,7 @@ public class TourController {
     @PostMapping("/admin/tours/schedules")
     public ApiResponse<ScheduleResponse> createSchedule(@RequestBody @Valid ScheduleCreateRequest request) {
         return ApiResponse.<ScheduleResponse>builder()
-                .result(tourService.createSchedule(request))
+                .result(scheduleService.createSchedule(request))
                 .build();
     }
 
@@ -106,7 +114,7 @@ public class TourController {
             @PathVariable Integer id,
             @RequestParam String status) {
         return ApiResponse.<ScheduleResponse>builder()
-                .result(tourService.updateScheduleStatus(id, status))
+                .result(scheduleService.updateScheduleStatus(id, status))
                 .build();
     }
 
@@ -114,7 +122,7 @@ public class TourController {
     @PostMapping("/admin/tours/pricing")
     public ApiResponse<PricingConfigResponse> createPricing(@RequestBody @Valid PricingConfigRequest request) {
         return ApiResponse.<PricingConfigResponse>builder()
-                .result(tourService.createPricing(request))
+                .result(scheduleService.createPricing(request))
                 .build();
     }
 
@@ -122,14 +130,14 @@ public class TourController {
     @PostMapping("/admin/tours/surcharges")
     public ApiResponse<SurchargeResponse> createSurcharge(@RequestBody @Valid SurchargeRequest request) {
         return ApiResponse.<SurchargeResponse>builder()
-                .result(tourService.createSurcharge(request))
+                .result(scheduleService.createSurcharge(request))
                 .build();
     }
 
     @GetMapping("/admin/tours/{id}/surcharges")
     public ApiResponse<List<SurchargeResponse>> getSurchargesByTour(@PathVariable Integer id) {
         return ApiResponse.<List<SurchargeResponse>>builder()
-                .result(tourService.getSurchargesBySchedule(id))
+                .result(scheduleService.getSurchargesBySchedule(id))
                 .build();
     }
     @GetMapping("/tours/search")
