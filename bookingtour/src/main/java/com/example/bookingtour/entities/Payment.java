@@ -25,21 +25,21 @@ public class Payment {
     private Booking booking;
 
     @Column(name = "idempotency_key", unique = true, length = 100)
-    private String idempotencyKey; // Key chống thanh toán lặp
+    private String idempotencyKey;
 
     @Column(name = "amount")
     private BigDecimal amount;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "payment_method", length = 50)
-    private PaymentMethod paymentMethod; // MOMO, VNPAY
+    private PaymentMethod paymentMethod;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", length = 20)
-    private PaymentStatus status; // SUCCESS, FAILED
+    private PaymentStatus status;
 
     @Column(name = "transaction_code", length = 100)
-    private String transactionCode; // Mã giao dịch từ phía Ngân hàng/Ví
+    private String transactionCode;
 
     @CreationTimestamp
     @Column(name = "created_at")

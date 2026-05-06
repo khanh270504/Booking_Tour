@@ -5,7 +5,8 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
-import java.time.LocalDateTime;
+
+import java.time.LocalDate;
 
 @Data
 public class ScheduleCreateRequest {
@@ -18,11 +19,11 @@ public class ScheduleCreateRequest {
 
     @NotNull(message = "Ngày giờ khởi hành không được để trống")
     @Future(message = "Ngày giờ khởi hành phải ở tương lai")
-    private LocalDateTime departureDate;
+    private LocalDate departureDate;
 
     @NotNull(message = "Ngày giờ về không được để trống")
     @Future(message = "Ngày giờ về phải ở tương lai")
-    private LocalDateTime returnDate;
+    private LocalDate returnDate;
 
     @NotNull(message = "Phải nhập tổng số chỗ tối đa")
     @Min(value = 1, message = "Tổng số chỗ phải lớn hơn 0")

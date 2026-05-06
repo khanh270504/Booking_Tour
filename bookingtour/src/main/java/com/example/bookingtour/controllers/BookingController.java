@@ -33,13 +33,15 @@ public class BookingController {
         return null;
     }
 
-    // 1. TẠO BOOKING
     @PostMapping
     public ResponseEntity<BookingResponse> createBooking(
             @RequestBody BookingCreateRequest request) {
 
         Integer currentUserId = getCurrentUserIdSafely();
-        log.info("API: Nhận yêu cầu tạo Booking cho email {}. UserId: {}", request.getEmail(), currentUserId);
+
+        log.info("API: Nhận yêu cầu tạo Booking cho email {}. UserId: {}",
+                request.getContactInfo() != null ? request.getContactInfo().getEmail() : "Ẩn danh",
+                currentUserId);
 
         BookingResponse response = bookingService.createBooking(request, currentUserId);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
@@ -51,7 +53,6 @@ public class BookingController {
         BookingResponse response = bookingService.getBookingById(bookingId);
         return ResponseEntity.ok(response);
     }
-
 
     @GetMapping("/me")
     public ResponseEntity<List<BookingResponse>> getMyBookings() {
@@ -65,14 +66,26 @@ public class BookingController {
         return ResponseEntity.ok(responses);
     }
 
-    // 4. HỦY ĐƠN
     @PostMapping("/cancel")
     public ResponseEntity<BookingResponse> cancelBooking(@RequestBody BookingCancelRequest request) {
-        // Trong thực tế, service phải check xem currentUserId có đúng là chủ của đơn này không mới cho hủy nhé!
         Integer currentUserId = getCurrentUserIdSafely();
+
+        if (currentUserId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
         log.info("API: User {} yêu cầu hủy đơn hàng ID: {}", currentUserId, request.getBookingId());
 
-        BookingResponse response = bookingService.cancelBooking(request);
+        BookingResponse response = bookingService.cancelBooking(request, currentUserId);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/lookup")
+    public ResponseEntity<BookingResponse> lookupBooking(
+            @RequestParam String bookingCode,
+            @RequestParam String email) {
+
+        BookingResponse response = bookingService.lookupBooking(bookingCode, email);
         return ResponseEntity.ok(response);
     }
 }

@@ -6,6 +6,8 @@ import com.example.bookingtour.dtos.request.auth.RegisterRequest;
 import com.example.bookingtour.dtos.response.ApiResponse;
 import com.example.bookingtour.dtos.response.auth.AuthenticationResponse;
 import com.example.bookingtour.dtos.response.auth.IntrospectResponse;
+import com.example.bookingtour.exceptions.AppException;
+import com.example.bookingtour.exceptions.ErrorCode;
 import com.example.bookingtour.services.AuthenticationService;
 import com.nimbusds.jose.JOSEException;
 import jakarta.servlet.http.Cookie;
@@ -64,7 +66,7 @@ public class AuthenticationController {
                 .filter(c -> "refresh_token".equals(c.getName()))
                 .findFirst()
                 .map(Cookie::getValue)
-                .orElseThrow(() -> new RuntimeException("Refresh token not found"));
+                .orElseThrow(() -> new AppException(ErrorCode.UNAUTHENTICATED));
 
         var authResponse = authService.refreshToken(refreshToken);
 

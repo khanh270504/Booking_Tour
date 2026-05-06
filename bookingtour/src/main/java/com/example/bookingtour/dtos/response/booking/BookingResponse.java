@@ -18,11 +18,18 @@ import java.util.stream.Collectors;
 @Builder
 public class BookingResponse {
     private Integer id;
-    private String userEmail;
-    private String customerFullName;
+
+    private String bookingCode;
+
+    private String contactName;
+    private String contactPhone;
+    private String contactEmail;
 
     private String tourName;
     private String departureDate;
+    private String departureLocation;
+
+    private String note;
 
     private BigDecimal totalOriginalPrice;
     private BigDecimal totalDiscount;
@@ -33,38 +40,41 @@ public class BookingResponse {
     private String voucherCode;
     private Instant createdAt;
 
+    private String createdByEmail;
+
     private List<PassengerResponse> passengers;
 
-    public static BookingResponse fromBooking(Booking booking, String customerFullName, List<BookingPassenger> passengers) {
-        if (booking == null) {
-            return null;
-        }
+    public static BookingResponse fromBooking(Booking booking, List<BookingPassenger> passengers) {
+        if (booking == null) return null;
+
         return BookingResponse.builder()
                 .id(booking.getId())
+                .bookingCode(booking.getBookingCode())
 
-                .userEmail(booking.getUser() != null ? booking.getUser().getEmail() : null)
+                .contactName(booking.getContactName())
+                .contactPhone(booking.getContactPhone())
+                .contactEmail(booking.getContactEmail())
 
-                .customerFullName(customerFullName)
+                .tourName(booking.getTourNameSnapshot())
+                .departureDate(booking.getDepartureDateSnapshot() != null ? booking.getDepartureDateSnapshot().toString() : null)
+                .departureLocation(booking.getDepartureLocationSnapshot()) // Map Điểm khởi hành
 
-                .tourName(booking.getSchedule() != null && booking.getSchedule().getTour() != null
-                        ? booking.getSchedule().getTour().getName() : null)
-
-                .departureDate(booking.getSchedule() != null && booking.getSchedule().getDepartureDate() != null
-                        ? booking.getSchedule().getDepartureDate().toString() : null)
+                .note(booking.getNote()) // Map Ghi chú
 
                 .totalOriginalPrice(booking.getTotalOriginalPrice())
                 .totalDiscount(booking.getTotalDiscount())
                 .totalSurcharge(booking.getTotalSurcharge())
                 .totalFinalPrice(booking.getTotalFinalPrice())
+
                 .status(booking.getStatus() != null ? booking.getStatus().name() : null)
                 .voucherCode(booking.getVoucher() != null ? booking.getVoucher().getCode() : null)
                 .createdAt(booking.getCreatedAt())
 
-                .passengers(passengers != null
-                        ? passengers.stream()
+                .createdByEmail(booking.getCreatedBy() != null ? booking.getCreatedBy().getEmail() : null)
+
+                .passengers(passengers != null ? passengers.stream()
                         .map(PassengerResponse::fromPassenger)
-                        .collect(Collectors.toList())
-                        : null)
+                        .collect(Collectors.toList()) : List.of())
                 .build();
     }
 }

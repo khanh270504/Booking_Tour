@@ -19,6 +19,7 @@ public interface IBookingService {
     List<BookingResponse> getBookingsByUser(Integer userId);
 
 
-    BookingResponse cancelBooking(BookingCancelRequest request);
+    BookingResponse cancelBooking(BookingCancelRequest request, Integer currentUserId);
 
+    BookingResponse lookupBooking(String bookingCode, String email);
 }

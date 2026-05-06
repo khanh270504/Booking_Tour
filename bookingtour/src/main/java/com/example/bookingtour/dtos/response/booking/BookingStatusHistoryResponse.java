@@ -13,17 +13,21 @@ import java.time.Instant;
 @NoArgsConstructor
 @Builder
 public class BookingStatusHistoryResponse {
+
+    private Integer id;
+
     private String fromStatus;
     private String toStatus;
     private String reason;
     private String changedBy;
     private Instant createdAt;
+
     public static BookingStatusHistoryResponse fromHistory(BookingStatusHistory history) {
         if (history == null) {
             return null;
         }
-
         return BookingStatusHistoryResponse.builder()
+                .id(history.getId())
                 .fromStatus(history.getFromStatus() != null ? history.getFromStatus().name() : null)
                 .toStatus(history.getToStatus() != null ? history.getToStatus().name() : null)
                 .reason(history.getReason())
