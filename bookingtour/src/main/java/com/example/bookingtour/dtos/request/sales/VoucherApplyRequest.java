@@ -13,11 +13,9 @@ public class VoucherApplyRequest {
     @NotBlank(message = "Vui lòng nhập mã giảm giá")
     private String code;
 
-    @NotNull(message = "Tổng tiền giỏ hàng không được để trống")
-    @DecimalMin(value = "0.0", inclusive = false, message = "Tổng tiền phải lớn hơn 0")
+    @NotNull(message = "Số tiền đơn hàng không được trống")
     private BigDecimal orderTotal;
 
     private Integer tourId;
 
-    private Integer customerId;
 }

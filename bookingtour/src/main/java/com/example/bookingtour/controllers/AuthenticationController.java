@@ -1,5 +1,6 @@
 package com.example.bookingtour.controllers;
 
+import com.example.bookingtour.dtos.request.auth.GoogleLoginRequest;
 import com.example.bookingtour.dtos.request.auth.IntrospectRequest;
 import com.example.bookingtour.dtos.request.auth.LoginRequest;
 import com.example.bookingtour.dtos.request.auth.RegisterRequest;
@@ -120,6 +121,13 @@ public class AuthenticationController {
         return ApiResponse.<AuthenticationResponse>builder()
                 .result(authResponse)
                 .message("Đăng ký thành công! Chào mừng bạn đến với Booking Tour.")
+                .build();
+    }
+    @PostMapping("/google")
+    public ApiResponse<AuthenticationResponse> googleLogin(@RequestBody GoogleLoginRequest request) {
+        var result = authService.googleLogin(request.getToken());
+        return ApiResponse.<AuthenticationResponse>builder()
+                .result(result)
                 .build();
     }
 }

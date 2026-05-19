@@ -4,8 +4,9 @@ import com.example.bookingtour.enums.LeadStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp; // Nhớ import cái này
+import org.hibernate.annotations.UpdateTimestamp;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 
 @Entity
@@ -24,10 +25,10 @@ public class CrmLead {
     @Column(name = "lead_code", unique = true, length = 20)
     private String leadCode;
 
-    @Column(name = "full_name", length = 100)
+    @Column(name = "full_name", length = 100, nullable = false)
     private String fullName;
 
-    @Column(name = "phone", length = 20)
+    @Column(name = "phone", length = 20, nullable = false)
     private String phone;
 
     @Column(name = "email", length = 100)
@@ -46,7 +47,32 @@ public class CrmLead {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "assigned_staff_id")
-    private User assignedStaff;
+    private StaffProfile assignedStaff;
+
+    // Mức độ tiềm năng
+    // HOT, WARM, COLD
+    @Column(name = "priority", length = 20)
+    private String priority;
+
+    // Khách muốn đi khi nào
+    @Column(name = "expected_travel_date")
+    private Instant expectedTravelDate;
+
+    // Số người dự kiến
+    @Column(name = "estimated_people")
+    private Integer estimatedPeople;
+
+    // Ngân sách dự kiến
+    @Column(name = "estimated_budget")
+    private BigDecimal estimatedBudget;
+
+    // Lần cuối chăm sóc
+    @Column(name = "last_contact_at")
+    private Instant lastContactAt;
+
+    // Ngày cần follow tiếp
+    @Column(name = "next_follow_up_at")
+    private Instant nextFollowUpAt;
 
     @Column(name = "notes", columnDefinition = "TEXT")
     private String notes;

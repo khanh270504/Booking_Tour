@@ -57,4 +57,8 @@ public class VoucherController {
     public ResponseEntity<VoucherApplyResponse> applyVoucher(@Valid @RequestBody VoucherApplyRequest request) {
         return ResponseEntity.ok(voucherService.applyVoucher(request));
     }
+    @GetMapping("/public/active")
+    public ResponseEntity<List<VoucherResponse>> getActiveVouchers() {
+        return ResponseEntity.ok(voucherService.getActiveVouchersForPublic());
+    }
 }

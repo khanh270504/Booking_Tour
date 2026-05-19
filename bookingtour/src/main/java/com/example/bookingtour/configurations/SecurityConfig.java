@@ -30,9 +30,8 @@ public class SecurityConfig {
     };
 
     private final String[] PUBLIC_POST_ENDPOINTS = {
-            "/auth/login", "/auth/introspect",
-            "/auth/logout", "/auth/refresh", "/auth/register",
-            "/api/v1/bookings", "/api/v1/payments/**"
+
+            "/api/v1/bookings", "/api/v1/payments/**", "/api/v1/**"
     };
 
     @Autowired
@@ -47,6 +46,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(request -> request
                         .requestMatchers(HttpMethod.GET, PUBLIC_GET_ENDPOINTS).permitAll()
                         .requestMatchers(HttpMethod.POST, PUBLIC_POST_ENDPOINTS).permitAll()
+                        .requestMatchers("/auth/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/bookings/lookup").permitAll()
                         .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
 
@@ -82,7 +82,7 @@ public class SecurityConfig {
     @Bean
     JwtAuthenticationConverter jwtAuthenticationConverter() {
         JwtGrantedAuthoritiesConverter jwtGrantedAuthoritiesConverter = new JwtGrantedAuthoritiesConverter();
-        jwtGrantedAuthoritiesConverter.setAuthorityPrefix("ROLE_");
+        jwtGrantedAuthoritiesConverter.setAuthorityPrefix("");
         JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
         converter.setJwtGrantedAuthoritiesConverter(jwtGrantedAuthoritiesConverter);
         return converter;

@@ -24,4 +24,5 @@ public class StaffCreateRequest {
     private String position;
 
     private String employeeCode;
+    private String phone;
 }

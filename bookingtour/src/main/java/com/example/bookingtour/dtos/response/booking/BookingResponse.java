@@ -1,5 +1,6 @@
 package com.example.bookingtour.dtos.response.booking;
 
+import com.example.bookingtour.dtos.response.payment.PaymentResponse;
 import com.example.bookingtour.entities.Booking;
 import com.example.bookingtour.entities.BookingPassenger;
 import lombok.AllArgsConstructor;
@@ -43,6 +44,8 @@ public class BookingResponse {
     private String createdByEmail;
 
     private List<PassengerResponse> passengers;
+    private List<BookingStatusHistoryResponse> statusHistories;
+    private List<PaymentResponse> payments;
 
     public static BookingResponse fromBooking(Booking booking, List<BookingPassenger> passengers) {
         if (booking == null) return null;

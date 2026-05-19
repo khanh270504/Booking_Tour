@@ -6,6 +6,7 @@ import com.example.bookingtour.dtos.request.tour.*;
 import com.example.bookingtour.dtos.response.ApiResponse;
 import com.example.bookingtour.dtos.response.PageResponse;
 import com.example.bookingtour.dtos.response.tour.*;
+import com.example.bookingtour.repositories.TourRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -25,6 +26,7 @@ public class TourController {
 
     private final ITourService tourService;
     private final IScheduleService scheduleService;
+    private final TourRepository tourRepository;
 
     @GetMapping("/tours")
     public ApiResponse<List<TourResponse>> getAllToursForClient() {
@@ -175,6 +177,14 @@ public class TourController {
                 .code(200)
                 .message("Tìm kiếm tour thành công")
                 .result(result)
+                .build();
+    }
+
+    @GetMapping("/tours/select-list")
+    public ApiResponse<List<TourSelectResponse>> getTourSelectList() {
+        List<TourSelectResponse> list = tourRepository.getTourSelectList();
+        return ApiResponse.<List<TourSelectResponse>>builder()
+                .result(list)
                 .build();
     }
 }
