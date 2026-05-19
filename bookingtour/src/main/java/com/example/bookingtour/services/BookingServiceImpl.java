@@ -5,9 +5,12 @@ import com.example.bookingtour.dtos.internal.PricingResultDto;
 import com.example.bookingtour.dtos.request.booking.BookingCancelRequest;
 import com.example.bookingtour.dtos.request.booking.BookingCreateRequest;
 import com.example.bookingtour.dtos.response.booking.BookingResponse;
+import com.example.bookingtour.dtos.response.booking.BookingStatusHistoryResponse;
+import com.example.bookingtour.dtos.response.payment.PaymentResponse;
 import com.example.bookingtour.entities.*;
 import com.example.bookingtour.enums.BookingStatus;
 import com.example.bookingtour.enums.PassengerType;
+import com.example.bookingtour.enums.PaymentStatus;
 import com.example.bookingtour.enums.ScheduleStatus;
 import com.example.bookingtour.exceptions.AppException;
 import com.example.bookingtour.exceptions.ErrorCode;
@@ -17,6 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -26,6 +30,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Slf4j
 public class BookingServiceImpl implements IBookingService {
+    private final PaymentRepository paymentRepository;
 
     private final UserRepository userRepository;
     private final TourScheduleRepository tourScheduleRepository;
@@ -71,7 +76,12 @@ public class BookingServiceImpl implements IBookingService {
             log.info("CRM: Khách cũ {} quay lại đặt tour", contactEmail);
         }
 
-        PricingResultDto pricing = pricingService.calculatePrice(schedule.getId(), request.getPassengers());
+        PricingResultDto pricing = pricingService.calculatePrice(
+                schedule.getId(),
+                request.getPassengers(),
+                request.getVoucherCode(),
+                schedule.getTour().getId()
+        );
 
         schedule.setAvailableSlots(schedule.getAvailableSlots() - quantity);
         if (schedule.getAvailableSlots() == 0) {
@@ -88,6 +98,7 @@ public class BookingServiceImpl implements IBookingService {
 
                 .tourNameSnapshot(schedule.getTour() != null ? schedule.getTour().getName() : "N/A")
                 .departureDateSnapshot(schedule.getDepartureDate())
+                .departureLocationSnapshot(schedule.getTour().getDestination().getName())
 
                 .contactName(request.getContactInfo().getFullName())
                 .contactPhone(request.getContactInfo().getPhone())
@@ -130,16 +141,41 @@ public class BookingServiceImpl implements IBookingService {
     public BookingResponse getBookingById(Integer bookingId) {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new AppException(ErrorCode.BOOKING_NOT_FOUND));
-        List<BookingPassenger> passengers = bookingPassengerRepository.findByBookingId(bookingId);
 
-        return BookingResponse.fromBooking(booking, passengers);
+        List<BookingPassenger> passengers = bookingPassengerRepository.findByBookingId(bookingId);
+        List<BookingStatusHistory> histories = statusHistoryRepository.findByBookingIdOrderByCreatedAtDesc(bookingId);
+        List<Payment> payments = paymentRepository.findByBookingId(bookingId);
+
+        BigDecimal totalPaid = payments.stream()
+                .filter(p -> p.getStatus() == PaymentStatus.SUCCESS)
+                .map(Payment::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal remaining = booking.getTotalFinalPrice().subtract(totalPaid).max(BigDecimal.ZERO);
+        BookingResponse response = BookingResponse.fromBooking(booking, passengers);
+        response.setPayments(payments.stream()
+                .map(p -> PaymentResponse.fromPayment(p, remaining))
+                .toList());
+
+        response.setStatusHistories(histories.stream()
+                .map(BookingStatusHistoryResponse::fromHistory)
+                .toList());
+
+        return response;
     }
 
     @Override
     public List<BookingResponse> getBookingsByUser(Integer userInternalId) {
+        // 1. Lấy thông tin User hiện tại để lấy Email
+        User currentUser = userRepository.findById(userInternalId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
-        return bookingRepository.findByCustomer_User_IdOrderByCreatedAtDesc(userInternalId).stream()
-                .map(b -> BookingResponse.fromBooking(b, bookingPassengerRepository.findByBookingId(b.getId())))
+        String email = currentUser.getEmail();
+
+        return bookingRepository.findByContactEmailOrderByCreatedAtDesc(email).stream()
+                .map(b -> {
+                    List<BookingPassenger> ps = bookingPassengerRepository.findByBookingId(b.getId());
+                    return BookingResponse.fromBooking(b, ps);
+                })
                 .toList();
     }
 

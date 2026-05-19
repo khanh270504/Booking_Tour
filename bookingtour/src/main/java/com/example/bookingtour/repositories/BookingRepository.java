@@ -11,8 +11,7 @@ import java.util.Optional;
 @Repository
 public interface BookingRepository extends JpaRepository<Booking, Integer> {
 
-    @Query("SELECT b FROM Booking b WHERE b.customer.user.id = :userId ORDER BY b.createdAt DESC")
-    List<Booking> findByCustomer_User_IdOrderByCreatedAtDesc(@Param("userId") Integer userId);
+    List<Booking> findByContactEmailOrderByCreatedAtDesc(String email);
 
     Optional<Booking> findByBookingCodeAndContactEmail(String bookingCode, String contactEmail);
 }

@@ -9,6 +9,6 @@ import java.util.List;
 @Repository
 public interface CrmInteractionRepository extends JpaRepository<CrmInteraction, Integer> {
 
-    List<CrmInteraction> findByLeadIdOrderByCreatedAtDesc(Integer leadId);
+    List<CrmInteraction> findByLead_IdOrderByCreatedAtDesc(Integer leadId);
 
 }

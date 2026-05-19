@@ -3,6 +3,7 @@ package com.example.bookingtour.services;
 import com.example.bookingtour.dtos.request.payment.ManualPaymentRequest;
 import com.example.bookingtour.dtos.response.payment.PaymentResponse;
 import com.example.bookingtour.entities.Booking;
+import com.example.bookingtour.entities.BookingStatusHistory;
 import com.example.bookingtour.entities.Payment;
 import com.example.bookingtour.enums.BookingStatus;
 import com.example.bookingtour.enums.PaymentMethod;
@@ -11,6 +12,7 @@ import com.example.bookingtour.exceptions.AppException;
 import com.example.bookingtour.exceptions.ErrorCode;
 import com.example.bookingtour.IServices.IPaymentService;
 import com.example.bookingtour.repositories.BookingRepository;
+import com.example.bookingtour.repositories.BookingStatusHistoryRepository;
 import com.example.bookingtour.repositories.PaymentRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,7 +30,7 @@ public class PaymentServiceImpl implements IPaymentService {
 
     private final PaymentRepository paymentRepository;
     private final BookingRepository bookingRepository;
-
+    private final BookingStatusHistoryRepository statusHistoryRepository;
     @Override
     @Transactional
     public PaymentResponse processManualPayment(ManualPaymentRequest request) {
@@ -146,13 +148,32 @@ public class PaymentServiceImpl implements IPaymentService {
     }
 
     private void updateBookingStatus(Booking booking, BigDecimal totalPaid) {
-        // CONFIRMED nếu đã trả đủ hoặc thừa, ngược lại giữ PENDING
+        BookingStatus oldStatus = booking.getStatus();
+        BookingStatus newStatus;
+
         if (totalPaid.compareTo(booking.getTotalFinalPrice()) >= 0) {
-            booking.setStatus(BookingStatus.CONFIRMED);
+            newStatus = BookingStatus.CONFIRMED;
         } else {
-            booking.setStatus(BookingStatus.PENDING);
+            newStatus = BookingStatus.PENDING;
         }
-        bookingRepository.save(booking);
+
+        if (oldStatus != newStatus) {
+            booking.setStatus(newStatus);
+            bookingRepository.save(booking);
+
+            // 🎯 GHI SỔ VÀO HISTORY CHO CÁI TIMELINE NÓ ĐỌC
+            BookingStatusHistory history = BookingStatusHistory.builder()
+                    .booking(booking)
+                    .fromStatus(oldStatus)
+                    .toStatus(newStatus)
+                    .reason("Hệ thống tự động cập nhật: Khách đã thanh toán đủ tiền.")
+                    .changedBy("System - Payment")
+                    .build();
+
+            statusHistoryRepository.save(history);
+
+            log.info("Booking ID {} đã chuyển trạng thái từ {} sang {}", booking.getId(), oldStatus, newStatus);
+        }
     }
 
     private String generateIdempotencyKey(Integer bookingId) {

@@ -6,5 +6,5 @@ import com.example.bookingtour.dtos.request.booking.PassengerRequest;
 import java.util.List;
 
 public interface IPricingService {
-    PricingResultDto calculatePrice(Integer tourId, List<PassengerRequest> passengers);
+    PricingResultDto calculatePrice(Integer scheduleId, List<PassengerRequest> passengers, String voucherCode, Integer tourId);
 }

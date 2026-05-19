@@ -24,4 +24,6 @@ public interface IVoucherService {
     void redeemVoucher(String code);
 
     VoucherResponse getVoucherByCode(String code);
+
+    List<VoucherResponse> getActiveVouchersForPublic();
 }

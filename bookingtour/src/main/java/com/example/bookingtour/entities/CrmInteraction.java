@@ -19,29 +19,28 @@ public class CrmInteraction {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
+    // lead được chăm sóc
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "lead_id")
+    @JoinColumn(name = "lead_id", nullable = false)
     private CrmLead lead;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
-    private User user;
-
+    // nhân viên thực hiện tương tác
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "staff_id", nullable = false)
-    private User staff;
+    private StaffProfile staff;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "interaction_type", length = 20, nullable = false)
     private InteractionType interactionType;
 
-
-    @Column(name = "status", length = 20)
+    // kết quả cuộc gọi/tư vấn
+    @Column(name = "status", length = 50)
     private String status;
 
     @Column(name = "note", columnDefinition = "TEXT")
     private String note;
 
+    // lịch chăm sóc tiếp theo
     @Column(name = "next_action_date")
     private Instant nextActionDate;
 

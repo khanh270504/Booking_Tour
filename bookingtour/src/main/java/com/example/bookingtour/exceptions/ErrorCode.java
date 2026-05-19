@@ -16,7 +16,7 @@ public enum ErrorCode {
     UNAUTHORIZED(1007, "Bạn không có quyền truy cập chức năng này", HttpStatus.FORBIDDEN),
     USER_BLOCKED(1008, "Tài khoản của bạn đã bị khóa", HttpStatus.FORBIDDEN),
     UNAUTHORIZED_ACTION(1009, "Bạn không có quyền thao tác trên dữ liệu của người khác", HttpStatus.FORBIDDEN), // Lỗi dành cho việc khách sửa đơn của người khác
-
+    USER_NOT_FOUND(1010, "Không tìm thấy thông tin người dùng", HttpStatus.NOT_FOUND),
     // ================= 2000: ADMIN (ROLE & DEPT) =================
     ROLE_NOT_EXISTED(2001, "Vai trò (Role) không tồn tại", HttpStatus.NOT_FOUND),
     ROLE_EXISTED(2002, "Vai trò này đã tồn tại trong hệ thống", HttpStatus.BAD_REQUEST),
@@ -56,7 +56,12 @@ public enum ErrorCode {
     VOUCHER_INACTIVE(5009, "Mã giảm giá này hiện đang tạm khóa", HttpStatus.BAD_REQUEST),
     VOUCHER_OUT_OF_STOCK(5010, "Mã giảm giá này đã hết lượt sử dụng", HttpStatus.BAD_REQUEST),
     VOUCHER_CONDITION_NOT_MET(5011, "Đơn hàng chưa đủ điều kiện để áp dụng mã giảm giá này", HttpStatus.BAD_REQUEST),
-
+    VOUCHER_ALREADY_EXISTS(5012, "Mã giảm giá này đã tồn tại trong hệ thống", HttpStatus.BAD_REQUEST),
+    VOUCHER_NOT_YET_STARTED(5013, "Mã giảm giá này chưa đến thời gian áp dụng", HttpStatus.BAD_REQUEST),
+    VOUCHER_NOT_FOR_THIS_TOUR(5014, "Mã giảm giá này không áp dụng cho Tour bạn đang chọn", HttpStatus.BAD_REQUEST),
+    UNAUTHORIZED_VOUCHER_ACCESS(5015, "Vui lòng đăng nhập để sử dụng mã giảm giá ưu đãi này", HttpStatus.UNAUTHORIZED),
+    VOUCHER_NOT_FOR_YOU(5016, "Mã giảm giá này là ưu đãi dành riêng cho tài khoản khác", HttpStatus.FORBIDDEN),
+    ORDER_TOTAL_NOT_ENOUGH(5017, "Giá trị đơn hàng chưa đủ mức tối thiểu để áp dụng mã giảm giá này", HttpStatus.BAD_REQUEST),
     // ================= 6000: CRM TICKETS & LEADS =================
     LEAD_NOT_FOUND(6001, "Không tìm thấy thông tin khách hàng tiềm năng", HttpStatus.NOT_FOUND),
     TICKET_NOT_FOUND(6002, "Không tìm thấy phiếu hỗ trợ/khiếu nại này", HttpStatus.NOT_FOUND),

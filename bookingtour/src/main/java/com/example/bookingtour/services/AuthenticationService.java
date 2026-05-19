@@ -16,6 +16,10 @@ import com.example.bookingtour.enums.UserStatus;
 import com.example.bookingtour.exceptions.AppException;
 import com.example.bookingtour.exceptions.ErrorCode;
 import com.example.bookingtour.repositories.*;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
+import com.google.api.client.http.javanet.NetHttpTransport;
+import com.google.api.client.json.gson.GsonFactory;
 import com.nimbusds.jose.*;
 import com.nimbusds.jose.crypto.MACSigner;
 import com.nimbusds.jose.crypto.MACVerifier;
@@ -34,6 +38,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.text.ParseException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Collections;
 import java.util.Date;
 import java.util.StringJoiner;
 import java.util.UUID;
@@ -106,6 +111,7 @@ public class AuthenticationService {
                 .user(newUser)
                 .fullName(request.getFullName())
                 .phone(request.getPhoneNumber())
+                .email(request.getEmail())
                 .build();
 
         customerProfileRepository.save(customerProfile);
@@ -210,5 +216,79 @@ public class AuthenticationService {
         }
 
         return signedJWT;
+    }
+
+    @NonFinal
+    @Value("${google.client-id}")
+    protected String GOOGLE_CLIENT_ID;
+
+    @Transactional
+    public AuthenticationResponse googleLogin(String googleToken) {
+        try {
+            GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(new NetHttpTransport(), new GsonFactory())
+                    .setAudience(Collections.singletonList(GOOGLE_CLIENT_ID))
+                    .build();
+
+            // 2. Quét cái token React gửi lên
+            GoogleIdToken idToken = verifier.verify(googleToken);
+
+            if (idToken != null) {
+                // 3. Token chuẩn -> Lấy thông tin khách
+                GoogleIdToken.Payload payload = idToken.getPayload();
+                String email = payload.getEmail();
+                String name = (String) payload.get("name");
+
+                // 4. Kiểm tra xem khách này đã từng đăng nhập hệ thống chưa
+                var userOptional = userRepository.findByEmail(email);
+                User user;
+
+                if (userOptional.isEmpty()) {
+                    // 🎯 KHÁCH MỚI: Bê nguyên logic đăng ký (register) của sếp xuống đây
+                    var role = roleRepository.findById("CUSTOMER")
+                            .orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_EXISTED));
+
+                    user = User.builder()
+                            .email(email)
+                            // Sinh một cái password rác ngẫu nhiên vì khách Google không cần xài tới
+                            .password(passwordEncoder.encode(UUID.randomUUID().toString()))
+                            .role(role)
+                            .status(UserStatus.ACTIVE)
+                            .userCode("CUS-" + UUID.randomUUID().toString().substring(0, 5).toUpperCase())
+                            .build();
+
+                    user = userRepository.save(user);
+
+                    var customerProfile = CustomerProfile.builder()
+                            .user(user)
+                            .fullName(name)
+                            .email(email)
+                            .build();
+
+                    customerProfileRepository.save(customerProfile);
+                } else {
+                    // 🎯 KHÁCH CŨ: Lấy ra và kiểm tra xem có bị block không
+                    user = userOptional.get();
+                    if (user.getStatus() != UserStatus.ACTIVE) {
+                        throw new AppException(ErrorCode.USER_BLOCKED);
+                    }
+                }
+
+                // 5. Trả về đúng cấu trúc AuthenticationResponse của sếp!
+                return AuthenticationResponse.builder()
+                        .token(generateAccessToken(user))
+                        .refreshToken(generateRefreshToken(user))
+                        .authenticated(true)
+                        .build();
+
+            } else {
+                // Token lởm
+                throw new AppException(ErrorCode.UNAUTHENTICATED);
+            }
+        } catch (AppException e) {
+            throw e; // Ném tiếp lỗi của hệ thống (như USER_BLOCKED) ra ngoài
+        } catch (Exception e) {
+            log.error("Lỗi xác thực Google OAuth2: ", e);
+            throw new AppException(ErrorCode.UNAUTHENTICATED);
+        }
     }
 }
