@@ -70,9 +70,11 @@ public enum ErrorCode {
     REVIEW_NOT_FOUND(7001, "Không tìm thấy bài đánh giá này", HttpStatus.NOT_FOUND),
     REVIEW_NOT_ALLOWED(7002, "Chỉ được đánh giá sau khi đã hoàn thành chuyến đi", HttpStatus.BAD_REQUEST),
     REVIEW_ALREADY_EXISTS(7003, "Bạn đã đánh giá chuyến đi này rồi", HttpStatus.BAD_REQUEST),
-    REVIEW_ALREADY_REPLIED(7004, "Đánh giá này đã được Ban quản trị phản hồi", HttpStatus.BAD_REQUEST)
-    ;
+    REVIEW_ALREADY_REPLIED(7004, "Đánh giá này đã được Ban quản trị phản hồi", HttpStatus.BAD_REQUEST),
 
+    PROVIDER_NOT_FOUND(8001, "Không tìm thấy nhà cung cấp này", HttpStatus.NOT_FOUND),
+    TOUR_COST_NOT_FOUND(8002, "Không tìm thấy chi phí tour này", HttpStatus.NOT_FOUND),
+;
     ErrorCode(int code, String message, HttpStatusCode statusCode) {
         this.code = code;
         this.message = message;

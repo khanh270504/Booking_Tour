@@ -33,7 +33,6 @@ public class PricingServiceImpl implements IPricingService {
     TourPricingConfigRepository pricingRepository;
     TourSurchargeRepository surchargeRepository;
 
-    // 🎯 1. Gọi thêm VoucherService vào đội hình
     IVoucherService voucherService;
 
     @Override
@@ -56,7 +55,11 @@ public class PricingServiceImpl implements IPricingService {
         BigDecimal totalOriginal = passengers.stream()
                 .map(req -> {
                     try {
-                        PassengerType type = PassengerType.valueOf(req.getPassengerType().toUpperCase());
+                        PassengerType type = req.getPassengerType();
+                        if (req.getPassengerType() == null) {
+                            throw new AppException(ErrorCode.PRICING_NOT_FOUND);
+                        }
+
                         BigDecimal exactPrice = priceMap.get(type);
                         if (exactPrice == null) throw new AppException(ErrorCode.PRICING_NOT_FOUND);
                         return exactPrice;

@@ -8,7 +8,7 @@ import java.math.BigDecimal;
 
 @Data
 public class SurchargeRequest {
-    @NotNull(message = "Giá phải thuộc về một lịch trình cụ thể (Schedule ID)")
+//    @NotNull(message = "Giá phải thuộc về một lịch trình cụ thể (Schedule ID)")
     private Integer scheduleId;
 
     @NotBlank(message = "Tên phụ thu không được để trống")

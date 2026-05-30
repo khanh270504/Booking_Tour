@@ -10,10 +10,10 @@ import java.util.List;
 public interface IStaffService {
 
 
-    UserResponse createStaff(StaffCreateRequest request);
+    StaffProfileResponse createStaff(StaffCreateRequest request);
 
 
-    UserResponse updateStaff(Integer userId, StaffUpdateRequest request);
+    StaffProfileResponse updateStaff(Integer userId, StaffUpdateRequest request);
 
 
     void toggleStaffStatus(String employeeCode);

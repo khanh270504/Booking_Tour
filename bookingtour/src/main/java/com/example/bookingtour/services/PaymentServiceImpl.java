@@ -22,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -127,9 +128,14 @@ public class PaymentServiceImpl implements IPaymentService {
     }
 
     @Override
-    public Payment getPaymentById(Integer paymentId) {
-        return paymentRepository.findById(paymentId)
+    public PaymentResponse getPaymentById(Integer paymentId) {
+        Payment payment = paymentRepository.findById(paymentId)
                 .orElseThrow(() -> new AppException(ErrorCode.PAYMENT_NOT_FOUND));
+
+        BigDecimal totalPaid = getTotalPaid(payment.getBooking());
+        BigDecimal remaining = payment.getBooking().getTotalFinalPrice().subtract(totalPaid).max(BigDecimal.ZERO);
+
+        return PaymentResponse.fromPayment(payment, remaining);
     }
 
 
@@ -178,5 +184,17 @@ public class PaymentServiceImpl implements IPaymentService {
 
     private String generateIdempotencyKey(Integer bookingId) {
         return UUID.randomUUID().toString() + "-B" + bookingId;
+    }
+    @Override
+    @Transactional(readOnly = true)
+    public List<PaymentResponse> getAllPayments() {
+        return paymentRepository.findAllByOrderByCreatedAtDesc()
+                .stream()
+                .map(payment -> {
+                    BigDecimal totalPaid = getTotalPaid(payment.getBooking());
+                    BigDecimal remaining = payment.getBooking().getTotalFinalPrice().subtract(totalPaid).max(BigDecimal.ZERO);
+                    return PaymentResponse.fromPayment(payment, remaining);
+                })
+                .collect(Collectors.toList());
     }
 }

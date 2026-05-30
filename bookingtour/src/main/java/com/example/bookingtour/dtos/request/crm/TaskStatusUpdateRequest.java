@@ -7,5 +7,5 @@ import lombok.Data;
 @Data
 public class TaskStatusUpdateRequest {
     @NotNull
-    private TaskStatus status; // TODO -> DONE
+    private TaskStatus status;
 }

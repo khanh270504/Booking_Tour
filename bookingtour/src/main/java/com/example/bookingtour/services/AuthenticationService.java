@@ -164,7 +164,8 @@ public class AuthenticationService {
         try {
             verifyToken(request.getToken(), false);
             return IntrospectResponse.builder().valid(true).build();
-        } catch (AppException | JOSEException | ParseException e) {
+        } catch (Exception e) {
+            log.error("Lỗi xác thực Token chi tiết: ", e);
             return IntrospectResponse.builder().valid(false).build();
         }
     }

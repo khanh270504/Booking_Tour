@@ -1,18 +1,14 @@
 package com.example.bookingtour.entities.ChatMessage;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
 import lombok.*;
+import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
 
-@Entity
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Getter
-@Setter
 @Builder
 @Document(collection = "messages")
 public class ChatMessage {
@@ -21,9 +17,16 @@ public class ChatMessage {
     private String id;
 
     private String conversationId;
-    private String senderId;
-    private String senderRole; // USER / ADMIN
+
+    private Integer senderId;
+
+    private String senderRole;
+
+    private String guestId;
+
     private String content;
 
-    private LocalDateTime createdAt = LocalDateTime.now();
+    private Boolean isRead;
+
+    private LocalDateTime createdAt;
 }

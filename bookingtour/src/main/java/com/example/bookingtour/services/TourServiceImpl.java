@@ -16,7 +16,6 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.data.domain.Pageable;
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -155,6 +154,16 @@ public class TourServiceImpl implements ITourService {
     public void deleteTour(Integer id) {
         Tour tour = tourRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.TOUR_NOT_FOUND));
         tour.setStatus(TourStatus.INACTIVE);
+        tourRepository.save(tour);
+    }
+    @Override
+    @Transactional
+    public void restoreTour(Integer id) {
+        log.info("Admin đang khôi phục tour có ID: {}", id);
+        Tour tour = tourRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy tour để khôi phục"));
+
+        tour.setStatus(TourStatus.ACTIVE);
         tourRepository.save(tour);
     }
 

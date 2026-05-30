@@ -9,7 +9,6 @@ import java.time.LocalDate;
 
 @Entity
 @Table(name = "booking_passengers")
-@Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
@@ -36,6 +35,12 @@ public class BookingPassenger {
     @Enumerated(EnumType.STRING)
     @Column(name = "passenger_type", length = 20)
     private PassengerType passengerType; // ADULT, CHILD
+
+    @Column(name = "identity_number", length = 30)
+    private String identityNumber;
+
+    @Column(name = "phone", length = 20)
+    private String phone;
 
     @Column(name = "unit_price")
     private BigDecimal unitPrice; // Giá vé áp dụng cho người này lúc đặt

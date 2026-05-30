@@ -13,6 +13,7 @@ import java.time.LocalDate;
 @AllArgsConstructor
 @Builder
 public class StaffProfileResponse {
+    private Integer staffId;
     private String employeeCode;
     private String fullName;
     private String phone;
@@ -24,6 +25,7 @@ public class StaffProfileResponse {
         if (entity == null) return null;
 
         return StaffProfileResponse.builder()
+                .staffId(entity.getId())
                 .employeeCode(entity.getEmployeeCode())
                 .fullName(entity.getFullName())
                 .phone(entity.getPhone())

@@ -1,5 +1,6 @@
 package com.example.bookingtour.dtos.request.booking;
 
+import com.example.bookingtour.enums.PassengerType;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -19,7 +20,7 @@ public class PassengerRequest {
     private String fullName;
 
     @NotBlank(message = "Loại hành khách không được để trống")
-    private String passengerType;
+    private PassengerType passengerType;
 
     private String gender;
 

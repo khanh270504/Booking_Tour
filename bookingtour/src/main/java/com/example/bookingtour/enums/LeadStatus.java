@@ -5,5 +5,6 @@ public enum LeadStatus {
     CONTACTED,      // Đã gọi thoại/nhắn tin
     QUALIFIED,      // Khách rất tiềm năng, chốt tỷ lệ cao
     LOST,           // Khách bom, khách từ chối
-    CONVERTED       // Đã chốt thành công đơn hàng
+    WON,   // Đã chốt thành công đơn hàng
+    PROPOSAL,
 }

@@ -10,7 +10,7 @@ import java.math.BigDecimal;
 @Data
 public class PricingConfigRequest {
 
-    @NotNull(message = "Giá phải thuộc về một lịch trình cụ thể (Schedule ID)")
+  //  @NotNull(message = "Giá phải thuộc về một lịch trình cụ thể (Schedule ID)")
     private Integer scheduleId;
 
     @NotNull(message = "Loại hành khách (Người lớn/Trẻ em...) không được để trống")

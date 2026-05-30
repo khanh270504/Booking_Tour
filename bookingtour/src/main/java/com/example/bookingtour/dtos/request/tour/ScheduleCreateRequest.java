@@ -1,5 +1,6 @@
 package com.example.bookingtour.dtos.request.tour;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -7,6 +8,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Data
 public class ScheduleCreateRequest {
@@ -28,6 +30,9 @@ public class ScheduleCreateRequest {
     @NotNull(message = "Phải nhập tổng số chỗ tối đa")
     @Min(value = 1, message = "Tổng số chỗ phải lớn hơn 0")
     private Integer maxSlots;
+    @Valid
+    private List<PricingConfigRequest> pricings;
 
-    private String scheduleCode;
+    @Valid
+    private List<SurchargeRequest> surcharges;
 }

@@ -1,13 +1,13 @@
 package com.example.bookingtour.controllers;
 
 import com.example.bookingtour.IServices.ILeadService;
+import com.example.bookingtour.dtos.request.crm.LeadConvertRequest;
 import com.example.bookingtour.dtos.request.crm.LeadCreateRequest;
 import com.example.bookingtour.dtos.request.crm.LeadUpdateRequest;
+import com.example.bookingtour.dtos.response.ApiResponse;
 import com.example.bookingtour.enums.LeadStatus;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -18,28 +18,43 @@ public class LeadController {
     private final ILeadService leadService;
 
     @PostMapping
-    public ResponseEntity<?> createLead(@Valid @RequestBody LeadCreateRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(leadService.createLead(request));
+    public ApiResponse<?> createLead(@Valid @RequestBody LeadCreateRequest request) {
+        return ApiResponse.builder()
+                .code(200)
+                .result(leadService.createLead(request))
+                .build();
     }
 
     @GetMapping
-    public ResponseEntity<?> getLeadsByStaff(@RequestParam Integer staffId) {
-        return ResponseEntity.ok(leadService.getLeadsByStaff(staffId));
+    public ApiResponse<?> getLeads(@RequestParam(required = false) Integer staffId) {
+        return ApiResponse.builder()
+                .code(200)
+                .result(leadService.getLeads(staffId))
+                .build();
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<?> getLeadDetail(@PathVariable Integer id) {
-        return ResponseEntity.ok(leadService.getLeadDetail(id));
+    public ApiResponse<?> getLeadDetail(@PathVariable Integer id) {
+        return ApiResponse.builder()
+                .code(200)
+                .result(leadService.getLeadDetail(id))
+                .build();
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateLead(@PathVariable Integer id, @RequestBody LeadUpdateRequest request) {
-        return ResponseEntity.ok(leadService.updateLead(id, request));
+    public ApiResponse<?> updateLead(@PathVariable Integer id, @RequestBody LeadUpdateRequest request) {
+        return ApiResponse.builder()
+                .code(200)
+                .result(leadService.updateLead(id, request))
+                .build();
     }
 
     @PatchMapping("/{id}/status")
-    public ResponseEntity<?> updateStatus(@PathVariable Integer id, @RequestParam LeadStatus status) {
+    public ApiResponse<?> updateStatus(@PathVariable("id") Integer id, @RequestParam("status") LeadStatus status ) {
         leadService.updateLeadStatus(id, status);
-        return ResponseEntity.ok("Cập nhật trạng thái thành công");
+        return ApiResponse.builder()
+                .code(200)
+                .message("Cập nhật trạng thái thành công")
+                .build();
     }
 }

@@ -1,5 +1,7 @@
 package com.example.bookingtour.entities;
 
+import com.example.bookingtour.enums.LeadPriority;
+import com.example.bookingtour.enums.LeadSource;
 import com.example.bookingtour.enums.LeadStatus;
 import jakarta.persistence.*;
 import lombok.*;
@@ -8,9 +10,17 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.LocalDate;
 
 @Entity
-@Table(name = "crm_leads")
+@Table(
+        name = "crm_leads",
+        indexes = {
+                @Index(name = "idx_crm_lead_phone", columnList = "phone"),
+                @Index(name = "idx_crm_lead_status", columnList = "status"),
+                @Index(name = "idx_crm_lead_staff", columnList = "assigned_staff_id")
+        }
+)
 @Getter
 @Setter
 @NoArgsConstructor
@@ -22,58 +32,64 @@ public class CrmLead {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @Column(name = "lead_code", unique = true, length = 20)
+    @Column(name = "lead_code", unique = true, nullable = false, length = 20)
     private String leadCode;
 
-    @Column(name = "full_name", length = 100, nullable = false)
+    @Column(name = "full_name", nullable = false, length = 100)
     private String fullName;
 
-    @Column(name = "phone", length = 20, nullable = false)
+    @Column(name = "phone", nullable = false, length = 20)
     private String phone;
 
     @Column(name = "email", length = 100)
     private String email;
 
-    @Column(name = "source", length = 50)
-    private String source;
-
+    // Nguồn khách hàng
     @Enumerated(EnumType.STRING)
-    @Column(name = "status", length = 20)
+    @Column(name = "source", length = 30)
+    private LeadSource source;
+
+    // Trạng thái pipeline CRM
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false, length = 30)
     private LeadStatus status;
 
+    // Tour khách đang quan tâm
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "interested_tour_id")
     private Tour interestedTour;
 
+    // Sale phụ trách
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "assigned_staff_id")
     private StaffProfile assignedStaff;
 
-    // Mức độ tiềm năng
-    // HOT, WARM, COLD
+    // HOT / WARM / COLD
+    @Enumerated(EnumType.STRING)
     @Column(name = "priority", length = 20)
-    private String priority;
+    private LeadPriority priority;
 
-    // Khách muốn đi khi nào
+    // Khách dự kiến đi ngày nào
     @Column(name = "expected_travel_date")
-    private Instant expectedTravelDate;
+    private LocalDate expectedTravelDate;
 
     // Số người dự kiến
     @Column(name = "estimated_people")
     private Integer estimatedPeople;
 
     // Ngân sách dự kiến
-    @Column(name = "estimated_budget")
+    @Column(name = "estimated_budget", precision = 15, scale = 2)
     private BigDecimal estimatedBudget;
 
     // Lần cuối chăm sóc
     @Column(name = "last_contact_at")
     private Instant lastContactAt;
 
-    // Ngày cần follow tiếp
-    @Column(name = "next_follow_up_at")
-    private Instant nextFollowUpAt;
+    // Lý do mất khách
+    @Column(name = "lost_reason", columnDefinition = "TEXT")
+    private String lostReason;
 
+    // Ghi chú nội bộ
     @Column(name = "notes", columnDefinition = "TEXT")
     private String notes;
 

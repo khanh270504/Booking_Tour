@@ -12,4 +12,5 @@ import java.util.List;
 public interface CrmLeadRepository extends JpaRepository<CrmLead, Integer> {
 
     List<CrmLead> findByAssignedStaff_IdOrderByCreatedAtDesc(Integer staffId);
+    List<CrmLead> findAllByOrderByCreatedAtDesc();
 }

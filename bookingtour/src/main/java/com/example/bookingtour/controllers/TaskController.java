@@ -2,11 +2,9 @@ package com.example.bookingtour.controllers;
 
 import com.example.bookingtour.IServices.ITaskService;
 import com.example.bookingtour.dtos.request.crm.TaskCreateRequest;
-import com.example.bookingtour.dtos.request.crm.TaskStatusUpdateRequest;
+import com.example.bookingtour.dtos.response.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -16,20 +14,56 @@ public class TaskController {
 
     private final ITaskService taskService;
 
+    // 1. Tạo mới công việc
     @PostMapping
-    public ResponseEntity<?> createTask(@Valid @RequestBody TaskCreateRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(taskService.createTask(request));
+    public ApiResponse<?> createTask(@Valid @RequestBody TaskCreateRequest request) {
+        return ApiResponse.builder()
+                .code(200)
+                .result(taskService.createTask(request))
+                .build();
     }
 
     @GetMapping("/me")
-    public ResponseEntity<?> getMyTasks() {
-        // Tự động lấy danh sách việc của người đang cầm Token
-        return ResponseEntity.ok(taskService.getMyTasks());
+    public ApiResponse<?> getMyTasks() {
+        return ApiResponse.builder()
+                .code(200)
+                .result(taskService.getMyTasks())
+                .build();
     }
 
-    @PatchMapping("/{id}/status")
-    public ResponseEntity<?> updateTaskStatus(@PathVariable Integer id, @Valid @RequestBody TaskStatusUpdateRequest request) {
-        taskService.updateTaskStatus(id, request);
-        return ResponseEntity.ok("Cập nhật công việc thành công");
+    @GetMapping
+    public ApiResponse<?> getAllTasks() {
+        return ApiResponse.builder()
+                .code(200)
+                .result(taskService.getAllTasks())
+                .build();
+    }
+    //hoan thanh
+    @PostMapping("/{id}/complete")
+    public ApiResponse<?> completeTask(@PathVariable Integer id) {
+        taskService.completeTask(id);
+        return ApiResponse.builder()
+                .code(200)
+                .message("Đã hoàn thành công việc!")
+                .build();
+    }
+
+    // Sửa thông tin
+    @PutMapping("/{id}")
+    public ApiResponse<?> updateTask(@PathVariable Integer id, @Valid @RequestBody TaskCreateRequest request) {
+        return ApiResponse.builder()
+                .code(200)
+                .result(taskService.updateTask(id, request))
+                .build();
+    }
+
+    // Xóa
+    @DeleteMapping("/{id}")
+    public ApiResponse<?> deleteTask(@PathVariable Integer id) {
+        taskService.deleteTask(id);
+        return ApiResponse.builder()
+                .code(200)
+                .message("Xóa công việc thành công")
+                .build();
     }
 }

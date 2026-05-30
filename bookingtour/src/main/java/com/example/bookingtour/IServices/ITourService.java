@@ -21,6 +21,7 @@ public interface ITourService {
     TourResponse updateTour(Integer id, TourCreateRequest request);
 
     void deleteTour(Integer id);
+    void restoreTour(Integer id);
 
     List<DestinationResponse> getAllDestinations();
 
