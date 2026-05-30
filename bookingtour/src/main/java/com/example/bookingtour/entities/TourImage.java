@@ -10,6 +10,7 @@ import lombok.*;
 @AllArgsConstructor
 @Getter
 @Setter
+@Builder
 public class TourImage {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

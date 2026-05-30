@@ -7,14 +7,17 @@ import com.example.bookingtour.dtos.response.ApiResponse;
 import com.example.bookingtour.dtos.response.PageResponse;
 import com.example.bookingtour.dtos.response.tour.*;
 import com.example.bookingtour.repositories.TourRepository;
+import com.example.bookingtour.services.TourImageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -27,7 +30,7 @@ public class TourController {
     private final ITourService tourService;
     private final IScheduleService scheduleService;
     private final TourRepository tourRepository;
-
+    private final TourImageService tourImageService;
     @GetMapping("/tours")
     public ApiResponse<List<TourResponse>> getAllToursForClient() {
         return ApiResponse.<List<TourResponse>>builder()
@@ -99,6 +102,13 @@ public class TourController {
         tourService.deleteTour(id);
         return ApiResponse.<String>builder()
                 .result("Tour đã được chuyển sang trạng thái INACTIVE thành công")
+                .build();
+    }
+    @PatchMapping("/admin/tours/{id}/restore")
+    public ApiResponse<String> restoreTour(@PathVariable Integer id) {
+        tourService.restoreTour(id);
+        return ApiResponse.<String>builder()
+                .result("Khôi phục tour thành công!")
                 .build();
     }
 
@@ -185,6 +195,28 @@ public class TourController {
         List<TourSelectResponse> list = tourRepository.getTourSelectList();
         return ApiResponse.<List<TourSelectResponse>>builder()
                 .result(list)
+                .build();
+    }
+
+    @PostMapping("/admin/tours/images/upload")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ApiResponse<String> upload(@ModelAttribute @Valid TourImageRequest request) throws Exception {
+        String fileUrl = tourImageService.uploadAndSave(request);
+
+        return ApiResponse.<String>builder()
+                .result(fileUrl)
+                .message("Đã đẩy ảnh lên kho và lưu vào DB thành công!")
+                .build();
+    }
+    @PostMapping("/admin/tours/images/upload-raw")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ApiResponse<String> uploadRaw(@RequestParam("file") MultipartFile file) throws Exception {
+
+        String fileUrl = tourImageService.uploadOnlyToMinIO(file);
+
+        return ApiResponse.<String>builder()
+                .result(fileUrl)
+                .message("Đã đẩy ảnh lên kho MinIO thành công!")
                 .build();
     }
 }

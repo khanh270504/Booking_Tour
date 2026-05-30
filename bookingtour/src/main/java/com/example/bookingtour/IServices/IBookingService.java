@@ -4,6 +4,7 @@ import com.example.bookingtour.dtos.request.booking.BookingCancelRequest;
 import com.example.bookingtour.dtos.request.booking.BookingCreateRequest;
 import com.example.bookingtour.dtos.request.payment.ManualPaymentRequest;
 import com.example.bookingtour.dtos.response.booking.BookingResponse;
+import com.example.bookingtour.dtos.response.booking.PassengerResponse;
 import com.example.bookingtour.dtos.response.payment.PaymentResponse;
 
 import java.util.List;
@@ -22,4 +23,9 @@ public interface IBookingService {
     BookingResponse cancelBooking(BookingCancelRequest request, Integer currentUserId);
 
     BookingResponse lookupBooking(String bookingCode, String email);
+
+    List<BookingResponse> getAllBookingsForAdmin();
+
+    BookingResponse updateBookingStatus(Integer bookingId, String status, String reason);
+    List<PassengerResponse> getPassengersByScheduleId(Integer scheduleId);
 }

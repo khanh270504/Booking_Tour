@@ -36,7 +36,6 @@ public class InteractionServiceImpl implements IInteractionService {
         Authentication authentication =
                 SecurityContextHolder.getContext().getAuthentication();
 
-        String email = authentication.getName();
         Jwt jwt = (Jwt) authentication.getPrincipal();
         Integer userId = ((Number) jwt.getClaim("userId")).intValue();
         StaffProfile staff = staffRepository.findByUser_Id(userId)
@@ -49,18 +48,20 @@ public class InteractionServiceImpl implements IInteractionService {
                 .lead(lead)
                 .staff(staff)
                 .interactionType(request.getInteractionType())
-                .status(request.getStatus())
+
+                .result(request.getResult())
+
                 .note(request.getNote())
                 .nextActionDate(request.getNextActionDate())
+                .createdAt(Instant.now())
                 .build();
 
         CrmInteraction savedInteraction = interactionRepository.save(interaction);
 
         lead.setLastContactAt(Instant.now());
 
-        if (request.getNextActionDate() != null) {
-            lead.setNextFollowUpAt(request.getNextActionDate());
-        }
+
+        leadRepository.save(lead);
 
         return InteractionResponse.fromInteractionResponse(savedInteraction);
     }

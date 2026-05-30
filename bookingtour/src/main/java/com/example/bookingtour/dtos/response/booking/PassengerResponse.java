@@ -14,14 +14,25 @@ import java.time.LocalDate;
 @NoArgsConstructor
 @Builder
 public class PassengerResponse {
+
     private Integer id;
+
     private String fullName;
+
     private String passengerType;
+
     private String gender;
+
     private LocalDate birthDate;
+
+    private String identityNumber;
+
+    private String phone;
+
     private BigDecimal unitPrice;
 
     public static PassengerResponse fromPassenger(BookingPassenger passenger) {
+
         if (passenger == null) {
             return null;
         }
@@ -31,9 +42,15 @@ public class PassengerResponse {
                 .fullName(passenger.getFullName())
                 .birthDate(passenger.getBirthDate())
                 .gender(passenger.getGender())
-                .passengerType(passenger.getPassengerType() != null ? passenger.getPassengerType().name() : null)
+                .identityNumber(passenger.getIdentityNumber())
+                .phone(passenger.getPhone())
+                .passengerType(
+                        passenger.getPassengerType() != null
+                                ? passenger.getPassengerType().name()
+                                : null
+                )
                 .unitPrice(passenger.getUnitPrice())
                 .build();
-
     }
 }
+

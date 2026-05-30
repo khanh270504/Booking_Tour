@@ -22,7 +22,7 @@ public class PaymentController {
     public ApiResponse<PaymentResponse> createManualPayment(@Valid @RequestBody ManualPaymentRequest request) {
         PaymentResponse response = paymentService.processManualPayment(request);
         return ApiResponse.<PaymentResponse>builder()
-                .code(1000)
+                .code(200)
                 .message("Xác nhận thanh toán thủ công thành công")
                 .result(response)
                 .build();
@@ -33,9 +33,38 @@ public class PaymentController {
         List<PaymentResponse> history = paymentService.getPaymentHistoryByBookingId(bookingId);
 
         return ApiResponse.<List<PaymentResponse>>builder()
-                .code(1000)
+                .code(200)
                 .message("Lấy lịch sử thanh toán thành công")
                 .result(history)
+                .build();
+    }
+    @GetMapping
+    public ApiResponse<List<PaymentResponse>> getAllPayments() {
+        List<PaymentResponse> allPayments = paymentService.getAllPayments();
+        return ApiResponse.<List<PaymentResponse>>builder()
+                .code(200)
+                .message("Lấy danh sách tất cả giao dịch thành công")
+                .result(allPayments)
+                .build();
+    }
+
+    @PatchMapping("/{paymentId}/cancel")
+    public ApiResponse<PaymentResponse> cancelPayment(@PathVariable Integer paymentId) {
+        PaymentResponse response = paymentService.cancelPayment(paymentId);
+        return ApiResponse.<PaymentResponse>builder()
+                .code(200)
+                .message("Hủy giao dịch thành công")
+                .result(response)
+                .build();
+    }
+
+    @GetMapping("/{id}")
+    public ApiResponse<PaymentResponse> getPaymentDetail(@PathVariable Integer id) {
+
+        return ApiResponse.<PaymentResponse>builder()
+                .code(200)
+                .message("Lấy chi tiết giao dịch thành công")
+                .result(paymentService.getPaymentById(id))
                 .build();
     }
 }

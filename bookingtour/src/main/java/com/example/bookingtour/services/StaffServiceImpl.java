@@ -3,8 +3,7 @@ package com.example.bookingtour.services;
 import com.example.bookingtour.IServices.IStaffService;
 import com.example.bookingtour.dtos.request.admin.StaffCreateRequest;
 import com.example.bookingtour.dtos.request.admin.StaffUpdateRequest;
-import com.example.bookingtour.dtos.response.auth.UserResponse;
-import com.example.bookingtour.dtos.response.profile.StaffProfileResponse;
+import com.example.bookingtour.dtos.response.profile.StaffProfileResponse; // Dùng duy nhất em này
 import com.example.bookingtour.entities.StaffProfile;
 import com.example.bookingtour.entities.User;
 import com.example.bookingtour.enums.UserStatus;
@@ -36,7 +35,7 @@ public class StaffServiceImpl implements IStaffService {
 
     @Override
     @Transactional
-    public UserResponse createStaff(StaffCreateRequest request) {
+    public StaffProfileResponse createStaff(StaffCreateRequest request) { // 🎯 Đã đổi kiểu trả về
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new AppException(ErrorCode.USER_EXISTED);
         }
@@ -65,26 +64,23 @@ public class StaffServiceImpl implements IStaffService {
                 .department(department)
                 .build();
 
-        staffProfileRepository.save(staffProfile);
-
-        return UserResponse.fromUser(newUser);
+        // Lưu thông tin profile và hứng thực thể đã lưu xuống
+        var savedProfile = staffProfileRepository.save(staffProfile);
+        return StaffProfileResponse.fromStaffProfile(savedProfile);
     }
 
     @Override
     @Transactional
-    public UserResponse updateStaff(Integer userId, StaffUpdateRequest request) {
+    public StaffProfileResponse updateStaff(Integer userId, StaffUpdateRequest request) { // 🎯 Đã đổi kiểu trả về
         var user = userRepository.findById(userId)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
-
 
         var profile = staffProfileRepository.findByUser_Id(userId)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
 
-
         if (request.getStatus() != null && !request.getStatus().isBlank()) {
             user.setStatus(UserStatus.valueOf(request.getStatus()));
         }
-
 
         if (request.getDepartmentId() != null) {
             var department = departmentRepository.findById(request.getDepartmentId())
@@ -105,8 +101,9 @@ public class StaffServiceImpl implements IStaffService {
             profile.setHireDate(request.getHireDate());
         }
 
-
-        return UserResponse.fromUser(user);
+        // Vì nằm trong @Transactional, trạng thái thay đổi của User và Profile
+        // sẽ tự động đồng bộ. Ta trả về luôn Profile chứa thông tin mới nhất.
+        return StaffProfileResponse.fromStaffProfile(profile);
     }
 
     @Override
@@ -116,9 +113,7 @@ public class StaffServiceImpl implements IStaffService {
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
 
         var user = profile.getUser();
-
         user.setStatus(user.getStatus() == UserStatus.ACTIVE ? UserStatus.BLOCKED : UserStatus.ACTIVE);
-
     }
 
     @Override

@@ -14,5 +14,9 @@ public interface ITaskService {
 
     void completeTask(Integer taskId);
 
-    void updateTaskStatus(Integer taskId, TaskStatusUpdateRequest request);
+    List<TaskResponse> getAllTasks();
+
+    void deleteTask(Integer taskId);
+
+    TaskResponse updateTask(Integer taskId, TaskCreateRequest request);
 }

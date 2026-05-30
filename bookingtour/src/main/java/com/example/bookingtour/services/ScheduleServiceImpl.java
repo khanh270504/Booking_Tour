@@ -23,7 +23,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -66,16 +68,49 @@ public class ScheduleServiceImpl implements IScheduleService {
         Tour tour = tourRepository.findById(request.getTourId())
                 .orElseThrow(() -> new AppException(ErrorCode.TOUR_NOT_FOUND));
 
+        String generatedCode = generateScheduleCode(tour, request.getDepartureDate());
+
+        // 1. Lưu Schedule trước để sinh ra ID trong Database
         TourSchedule schedule = TourSchedule.builder()
                 .tour(tour)
                 .departureDate(request.getDepartureDate())
+                .scheduleCode(generatedCode)
+                .departureLocation(request.getDepartureLocation())
                 .returnDate(request.getReturnDate())
                 .maxSlots(request.getMaxSlots())
                 .availableSlots(request.getMaxSlots())
                 .status(ScheduleStatus.OPENING)
                 .build();
 
-        return enrichScheduleResponse(scheduleRepository.save(schedule));
+        TourSchedule savedSchedule = scheduleRepository.save(schedule);
+
+        // 2. Lưu danh sách Cấu hình Giá (Pricings) đi kèm
+        if (request.getPricings() != null && !request.getPricings().isEmpty()) {
+            List<TourPricingConfig> pricingConfigs = request.getPricings().stream()
+                    .map(pricingDto -> TourPricingConfig.builder()
+                            .schedule(savedSchedule)
+                            .passengerType(pricingDto.getPassengerType())
+                            .price(pricingDto.getPrice())
+                            .currency(pricingDto.getCurrency())
+                            .build())
+                    .toList();
+            pricingRepository.saveAll(pricingConfigs); // Lưu cả cụm vào DB
+        }
+
+        // 3. Lưu danh sách Phụ phí (Surcharges) đi kèm
+        if (request.getSurcharges() != null && !request.getSurcharges().isEmpty()) {
+            List<TourSurcharge> surcharges = request.getSurcharges().stream()
+                    .map(surchargeDto -> TourSurcharge.builder()
+                            .schedule(savedSchedule)
+                            .surchargeName(surchargeDto.getSurchargeName())
+                            .amount(surchargeDto.getAmount())
+                            .isMandatory(surchargeDto.getIsMandatory())
+                            .build())
+                    .toList();
+            surchargeRepository.saveAll(surcharges); // Lưu cả cụm vào DB
+        }
+
+        return enrichScheduleResponse(savedSchedule);
     }
 
     @Override
@@ -83,8 +118,13 @@ public class ScheduleServiceImpl implements IScheduleService {
     public ScheduleResponse updateScheduleStatus(Integer id, String status) {
         TourSchedule schedule = scheduleRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.SCHEDULE_NOT_FOUND));
-        schedule.setStatus(ScheduleStatus.valueOf(status.toUpperCase()));
-        return enrichScheduleResponse(scheduleRepository.save(schedule));
+        try {
+            schedule.setStatus(ScheduleStatus.valueOf(status.toUpperCase()));
+        } catch (IllegalArgumentException e) {
+            throw new AppException(ErrorCode.INVALID_STATUS);
+        }
+
+        return enrichScheduleResponse(schedule);
     }
 
     @Override
@@ -148,5 +188,31 @@ public class ScheduleServiceImpl implements IScheduleService {
         }
         surchargeRepository.deleteById(id);
         log.info("Đã xóa phụ phí ID: {}", id);
+    }
+    private String generateScheduleCode(Tour tour, Object departureDate) {
+        String dateStr = "";
+
+        if (departureDate instanceof java.time.LocalDate) {
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("ddMMyy");
+            dateStr = ((java.time.LocalDate) departureDate).format(formatter);
+        } else {
+            String[] parts = departureDate.toString().split("-");
+            if (parts.length == 3) {
+                dateStr = parts[2] + parts[1] + parts[0].substring(2);
+            } else {
+                dateStr = String.valueOf(System.currentTimeMillis()).substring(8); // Fallback nếu lỗi chuỗi
+            }
+        }
+
+        String tourIdentifier = (tour.getTourcode() != null && !tour.getTourcode().isEmpty())
+                ? tour.getTourcode().toUpperCase()
+                : "TOUR" + tour.getId();
+
+        String baseCode = tourIdentifier + "-" + dateStr;
+
+        String randomSuffix = UUID.randomUUID().toString().substring(0, 3).toUpperCase();
+        return baseCode + "-" + randomSuffix;
+
+
     }
 }

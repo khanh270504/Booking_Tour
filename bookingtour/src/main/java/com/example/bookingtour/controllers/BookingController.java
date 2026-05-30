@@ -3,20 +3,22 @@ package com.example.bookingtour.controllers;
 import com.example.bookingtour.IServices.IBookingService;
 import com.example.bookingtour.dtos.request.booking.BookingCancelRequest;
 import com.example.bookingtour.dtos.request.booking.BookingCreateRequest;
+import com.example.bookingtour.dtos.response.ApiResponse;
 import com.example.bookingtour.dtos.response.booking.BookingResponse;
+import com.example.bookingtour.dtos.response.booking.PassengerResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
-@RequestMapping("/api/v1/bookings")
+@RequestMapping("/api/v1")
 @RequiredArgsConstructor
 @Slf4j
 public class BookingController {
@@ -33,59 +35,121 @@ public class BookingController {
         return null;
     }
 
-    @PostMapping
-    public ResponseEntity<BookingResponse> createBooking(
-            @RequestBody BookingCreateRequest request) {
 
+
+    @PostMapping("/bookings")
+    public ApiResponse<BookingResponse> createBooking(@RequestBody BookingCreateRequest request) {
         Integer currentUserId = getCurrentUserIdSafely();
 
         log.info("API: Nhận yêu cầu tạo Booking cho email {}. UserId: {}",
                 request.getContactInfo() != null ? request.getContactInfo().getEmail() : "Ẩn danh",
                 currentUserId);
 
-        BookingResponse response = bookingService.createBooking(request, currentUserId);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        return ApiResponse.<BookingResponse>builder()
+                .code(201) // Mã HTTP Created
+                .message("Tạo đơn đặt tour thành công")
+                .result(bookingService.createBooking(request, currentUserId))
+                .build();
     }
 
-    @GetMapping("/{bookingId}")
-    public ResponseEntity<BookingResponse> getBookingById(@PathVariable Integer bookingId) {
+    @GetMapping("/bookings/{bookingId}")
+    public ApiResponse<BookingResponse> getBookingById(@PathVariable Integer bookingId) {
         log.info("API: Lấy thông tin đơn hàng ID: {}", bookingId);
-        BookingResponse response = bookingService.getBookingById(bookingId);
-        return ResponseEntity.ok(response);
+
+        return ApiResponse.<BookingResponse>builder()
+                .code(200)
+                .message("Lấy thông tin đơn hàng thành công")
+                .result(bookingService.getBookingById(bookingId))
+                .build();
     }
 
-    @GetMapping("/me")
-    public ResponseEntity<List<BookingResponse>> getMyBookings() {
+    @GetMapping("/bookings/me")
+    public ApiResponse<List<BookingResponse>> getMyBookings() {
         Integer currentUserId = getCurrentUserIdSafely();
+
         if (currentUserId == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build(); // Chưa đăng nhập thì cút!
+            return ApiResponse.<List<BookingResponse>>builder()
+                    .code(401)
+                    .message("Vui lòng đăng nhập để xem danh sách đơn hàng")
+                    .build();
         }
 
         log.info("API: Lấy danh sách đơn hàng của User ID: {}", currentUserId);
-        List<BookingResponse> responses = bookingService.getBookingsByUser(currentUserId);
-        return ResponseEntity.ok(responses);
+
+        return ApiResponse.<List<BookingResponse>>builder()
+                .code(200)
+                .result(bookingService.getBookingsByUser(currentUserId))
+                .build();
     }
 
-    @PostMapping("/cancel")
-    public ResponseEntity<BookingResponse> cancelBooking(@RequestBody BookingCancelRequest request) {
+    @PostMapping("/bookings/cancel")
+    public ApiResponse<BookingResponse> cancelBooking(@RequestBody BookingCancelRequest request) {
         Integer currentUserId = getCurrentUserIdSafely();
 
         if (currentUserId == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            return ApiResponse.<BookingResponse>builder()
+                    .code(401)
+                    .message("Vui lòng đăng nhập để thực hiện thao tác này")
+                    .build();
         }
 
         log.info("API: User {} yêu cầu hủy đơn hàng ID: {}", currentUserId, request.getBookingId());
 
-        BookingResponse response = bookingService.cancelBooking(request, currentUserId);
-        return ResponseEntity.ok(response);
+        return ApiResponse.<BookingResponse>builder()
+                .code(200)
+                .message("Hủy đơn hàng thành công")
+                .result(bookingService.cancelBooking(request, currentUserId))
+                .build();
     }
 
-    @GetMapping("/lookup")
-    public ResponseEntity<BookingResponse> lookupBooking(
+    @GetMapping("/bookings/lookup")
+    public ApiResponse<BookingResponse> lookupBooking(
             @RequestParam String bookingCode,
             @RequestParam String email) {
 
-        BookingResponse response = bookingService.lookupBooking(bookingCode, email);
-        return ResponseEntity.ok(response);
+        return ApiResponse.<BookingResponse>builder()
+                .code(200)
+                .message("Tra cứu đơn hàng thành công")
+                .result(bookingService.lookupBooking(bookingCode, email))
+                .build();
+    }
+
+
+    @GetMapping("/admin/bookings")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ApiResponse<List<BookingResponse>> getAllBookingsForAdmin() {
+        return ApiResponse.<List<BookingResponse>>builder()
+                .code(200)
+                .message("Lấy danh sách đơn hàng thành công")
+                .result(bookingService.getAllBookingsForAdmin())
+                .build();
+    }
+
+    @PatchMapping("/admin/bookings/{id}/status")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ApiResponse<BookingResponse> updateBookingStatus(
+            @PathVariable("id") Integer id,
+            @RequestBody Map<String, String> payload) {
+
+        String status = payload.get("status");
+        String reason = payload.getOrDefault("reason", "Admin cập nhật trạng thái đơn hàng");
+
+        return ApiResponse.<BookingResponse>builder()
+                .code(200)
+                .message("Cập nhật trạng thái đơn hàng thành công")
+                .result(bookingService.updateBookingStatus(id, status, reason))
+                .build();
+    }
+    @GetMapping("/bookings/schedule/{scheduleId}/passengers")
+    public ApiResponse<List<PassengerResponse>> getPassengersBySchedule(@PathVariable Integer scheduleId) {
+        log.info("API: Hệ thống yêu cầu xuất danh sách đoàn cho Schedule ID: {}", scheduleId);
+
+        List<PassengerResponse> passengers = bookingService.getPassengersByScheduleId(scheduleId);
+
+        return ApiResponse.<List<PassengerResponse>>builder()
+                .code(200)
+                .message("Lấy danh sách hành khách theo lịch trình thành công")
+                .result(passengers)
+                .build();
     }
 }

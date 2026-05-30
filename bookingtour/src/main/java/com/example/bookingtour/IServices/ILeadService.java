@@ -1,5 +1,6 @@
 package com.example.bookingtour.IServices;
 
+import com.example.bookingtour.dtos.request.crm.LeadConvertRequest;
 import com.example.bookingtour.dtos.request.crm.LeadCreateRequest;
 import com.example.bookingtour.dtos.request.crm.LeadUpdateRequest;
 import com.example.bookingtour.dtos.response.crm.LeadResponse;
@@ -12,9 +13,10 @@ public interface ILeadService {
 
     void updateLeadStatus(Integer leadId, LeadStatus newStatus);
 
-    List<LeadResponse> getLeadsByStaff(Integer staffId);
+    List<LeadResponse> getLeads(Integer staffId);
 
     LeadResponse getLeadDetail(Integer id);
 
     LeadResponse updateLead(Integer leadId, LeadUpdateRequest leadUpdateRequest);
+
 }

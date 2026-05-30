@@ -9,7 +9,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class ChatRequest {
     private String conversationId;
-    private String senderId;
-    private String senderRole;
+
     private String content;
+
+    private String guestId;
 }

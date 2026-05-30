@@ -24,7 +24,7 @@ public class TourResponse {
     private String destinationName;
     private List<Map<String, Object>> itinerary;
     private Instant createdAt;
-
+    private String tourCode;
     private String thumbnail;
     private String duration;
     private Integer minParticipants;
@@ -48,7 +48,7 @@ public class TourResponse {
                 .destinationName(tour.getDestination() != null ? tour.getDestination().getName() : null)
                 .createdAt(tour.getCreatedAt())
                 .itinerary(tour.getItinerary())
-
+                .tourCode(tour.getTourcode())
                 .thumbnail(tour.getThumbnail())
                 .duration(calculatedDuration)
                 .minParticipants(tour.getMinParticipants())
