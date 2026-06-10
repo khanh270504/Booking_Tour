@@ -5,11 +5,14 @@ import com.example.bookingtour.enums.TicketStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+
 import java.time.Instant;
 
 @Entity
 @Table(name = "support_tickets")
-@Data
+@Getter
+@Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
@@ -23,7 +26,6 @@ public class SupportTicket {
     @JoinColumn(name = "customer_id", nullable = false)
     private CustomerProfile customer;
 
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "booking_id")
     private Booking booking;
@@ -36,7 +38,6 @@ public class SupportTicket {
 
     @Column(name = "admin_response", columnDefinition = "text")
     private String adminResponse;
-
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "assigned_staff_id")
@@ -53,6 +54,10 @@ public class SupportTicket {
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private Instant createdAt;
+
+    @UpdateTimestamp
+    @Column(name = "updated_at")
+    private Instant updatedAt;
 
     @Column(name = "closed_at")
     private Instant closedAt;

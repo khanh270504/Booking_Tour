@@ -16,7 +16,7 @@ public interface IStaffService {
     StaffProfileResponse updateStaff(Integer userId, StaffUpdateRequest request);
 
 
-    void toggleStaffStatus(String employeeCode);
+    void toggleStaffStatus(Integer staffId);
 
 
     StaffProfileResponse getStaffByCode(String employeeCode);

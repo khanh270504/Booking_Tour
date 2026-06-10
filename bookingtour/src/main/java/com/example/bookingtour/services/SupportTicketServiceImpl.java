@@ -34,17 +34,45 @@ public class SupportTicketServiceImpl implements ISupportTicketService {
     @Override
     @Transactional
     public SupportTicketResponse createTicket(SupportTicketCreateRequest request, Integer userId) {
-
         CustomerProfile customer = customerRepository.findByUser_Id(userId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy hồ sơ Khách hàng"));
 
-
         Booking booking = null;
-        if (request.getBookingId() != null) {
-            booking = bookingRepository.findById(request.getBookingId())
-                    .orElseThrow(() -> new RuntimeException("Không tìm thấy Booking"));
+        if (request.getBookingCode() != null && !request.getBookingCode().trim().isEmpty()) {
+            booking = bookingRepository.findByBookingCode(request.getBookingCode())
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy Booking với mã: " + request.getBookingCode()));
         }
 
+        SupportTicket ticket = SupportTicket.builder()
+                .customer(customer)
+                .booking(booking)
+                .subject(request.getSubject())
+                .description(request.getDescription())
+                .priority(TicketPriority.LOW)
+                .status(TicketStatus.OPEN)
+                .build();
+
+        ticketRepository.save(ticket);
+        return SupportTicketResponse.fromSupportTicket(ticket);
+    }
+
+
+    @Override
+    @Transactional
+    public SupportTicketResponse createTicketByAdmin(SupportTicketCreateRequest request) {
+
+        if (request.getBookingCode() == null || request.getBookingCode().trim().isEmpty()) {
+            throw new RuntimeException("Vui lòng nhập Mã Booking để tạo hỗ trợ");
+        }
+
+        Booking booking = bookingRepository.findByBookingCode(request.getBookingCode())
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng với mã: " + request.getBookingCode()));
+
+        CustomerProfile customer = booking.getCustomer();
+
+        if (customer == null) {
+            throw new RuntimeException("Đơn hàng này bị lỗi dữ liệu, không có thông tin khách hàng");
+        }
 
         SupportTicket ticket = SupportTicket.builder()
                 .customer(customer)
@@ -73,7 +101,6 @@ public class SupportTicketServiceImpl implements ISupportTicketService {
         if (status != null) {
             tickets = ticketRepository.findByStatusOrderByCreatedAtDesc(status);
         } else {
-
             tickets = ticketRepository.findAll(org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "createdAt"));
         }
         return tickets.stream()
@@ -81,10 +108,10 @@ public class SupportTicketServiceImpl implements ISupportTicketService {
                 .collect(Collectors.toList());
     }
 
+
     @Override
     @Transactional
     public SupportTicketResponse processTicket(Integer ticketId, SupportTicketProcessRequest request, Integer adminId) {
-
         SupportTicket ticket = ticketRepository.findById(ticketId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy Ticket"));
 
@@ -93,7 +120,19 @@ public class SupportTicketServiceImpl implements ISupportTicketService {
 
         ticket.setAssignedStaff(staff);
         ticket.setStatus(request.getStatus());
-        ticket.setAdminResponse(request.getResponseMessage());
+
+        if (request.getPriority() != null) {
+            ticket.setPriority(request.getPriority());
+        }
+
+        String newResponse = request.getResponseMessage();
+        if (newResponse != null && !newResponse.trim().isEmpty()) {
+            if (ticket.getAdminResponse() != null && !ticket.getAdminResponse().trim().isEmpty()) {
+                ticket.setAdminResponse(ticket.getAdminResponse() + "\n\n[Update]: " + newResponse);
+            } else {
+                ticket.setAdminResponse(newResponse);
+            }
+        }
 
         if (request.getStatus() == TicketStatus.CLOSED) {
             ticket.setClosedAt(Instant.now());

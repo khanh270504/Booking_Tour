@@ -13,4 +13,7 @@ public interface PaymentRepository extends JpaRepository<Payment, Integer> {
     Optional<Payment> findByIdempotencyKey(String idempotencyKey);
     boolean existsByBookingIdAndStatus(Integer bookingId, PaymentStatus status);
     List<Payment> findAllByOrderByCreatedAtDesc();
+    boolean existsByTransactionCode(String transactionCode);
+
+    Payment findByTransactionCode(String transactionCode);
 }

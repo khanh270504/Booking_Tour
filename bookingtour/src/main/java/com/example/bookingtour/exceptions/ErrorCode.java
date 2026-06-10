@@ -17,6 +17,7 @@ public enum ErrorCode {
     USER_BLOCKED(1008, "Tài khoản của bạn đã bị khóa", HttpStatus.FORBIDDEN),
     UNAUTHORIZED_ACTION(1009, "Bạn không có quyền thao tác trên dữ liệu của người khác", HttpStatus.FORBIDDEN), // Lỗi dành cho việc khách sửa đơn của người khác
     USER_NOT_FOUND(1010, "Không tìm thấy thông tin người dùng", HttpStatus.NOT_FOUND),
+
     // ================= 2000: ADMIN (ROLE & DEPT) =================
     ROLE_NOT_EXISTED(2001, "Vai trò (Role) không tồn tại", HttpStatus.NOT_FOUND),
     ROLE_EXISTED(2002, "Vai trò này đã tồn tại trong hệ thống", HttpStatus.BAD_REQUEST),
@@ -29,14 +30,20 @@ public enum ErrorCode {
     DESTINATION_NOT_FOUND(3002, "Điểm đến không tồn tại", HttpStatus.NOT_FOUND),
     SCHEDULE_NOT_FOUND(3003, "Không tìm thấy lịch khởi hành này", HttpStatus.NOT_FOUND),
     TOUR_NOT_ACTIVE(3004, "Tour này hiện tại đang tạm ngưng hoặc chưa mở bán", HttpStatus.BAD_REQUEST),
-    INVALID_DEPARTURE_DATE(3005, "Ngày khởi hành phải lớn hơn ngày hiện tại", HttpStatus.BAD_REQUEST),
+    INVALID_DEPARTURE_DATE(3005, "Ngày khởi hành phải lớn hơn ngày hiện tại", HttpStatus.BAD_REQUEST), // Có thể dùng thay cho DEPARTURE_DATE_IN_PAST
     PRICING_NOT_FOUND(3006, "Chưa cấu hình giá bán cho loại hành khách và ngày khởi hành này", HttpStatus.BAD_REQUEST),
     TOUR_HAS_ACTIVE_SCHEDULES(3007, "Không thể thao tác vì Tour vẫn còn lịch trình đang mở bán", HttpStatus.BAD_REQUEST),
-    INVALID_DATE_RANGE(3008, "Ngày về không được trước ngày khởi hành", HttpStatus.BAD_REQUEST),
+    INVALID_DATE_RANGE(3008, "Ngày về không được trước ngày khởi hành", HttpStatus.BAD_REQUEST), // Có thể dùng thay cho RETURN_DATE_BEFORE_DEPARTURE
     INVALID_STATUS(3009, "Trạng thái cập nhật không hợp lệ", HttpStatus.BAD_REQUEST),
     INVALID_AMOUNT(3010, "Số tiền hoặc giá trị không được là số âm", HttpStatus.BAD_REQUEST),
     SURCHARGE_NOT_FOUND(3011, "Không tìm thấy thông tin phụ phí này", HttpStatus.NOT_FOUND),
     TOUR_FULL(3012, "Lịch trình này đã đủ số lượng hành khách", HttpStatus.BAD_REQUEST),
+
+    // Bổ sung thêm từ logic Service
+    INVALID_DATE_FORMAT(3013, "Định dạng ngày tháng không hợp lệ hoặc bị bỏ trống", HttpStatus.BAD_REQUEST),
+    PRICING_REQUIRED_FOR_SCHEDULE(3014, "Bắt buộc phải có ít nhất 1 cấu hình giá khi tạo lịch trình", HttpStatus.BAD_REQUEST),
+    CANNOT_UPDATE_FINAL_STATUS(3015, "Không thể cập nhật trạng thái của lịch trình đã kết thúc hoặc đã hủy", HttpStatus.BAD_REQUEST),
+    CANNOT_CANCEL_TOUR_WITH_BOOKINGS(3016, "Không thể hủy lịch trình vì đã có khách hàng đặt chỗ. Vui lòng xử lý hoàn tiền trước", HttpStatus.BAD_REQUEST),
 
     // ================= 4000: BOOKING =================
     BOOKING_NOT_FOUND(4001, "Không tìm thấy mã đơn đặt Tour", HttpStatus.NOT_FOUND),
@@ -62,6 +69,7 @@ public enum ErrorCode {
     UNAUTHORIZED_VOUCHER_ACCESS(5015, "Vui lòng đăng nhập để sử dụng mã giảm giá ưu đãi này", HttpStatus.UNAUTHORIZED),
     VOUCHER_NOT_FOR_YOU(5016, "Mã giảm giá này là ưu đãi dành riêng cho tài khoản khác", HttpStatus.FORBIDDEN),
     ORDER_TOTAL_NOT_ENOUGH(5017, "Giá trị đơn hàng chưa đủ mức tối thiểu để áp dụng mã giảm giá này", HttpStatus.BAD_REQUEST),
+
     // ================= 6000: CRM TICKETS & LEADS =================
     LEAD_NOT_FOUND(6001, "Không tìm thấy thông tin khách hàng tiềm năng", HttpStatus.NOT_FOUND),
     TICKET_NOT_FOUND(6002, "Không tìm thấy phiếu hỗ trợ/khiếu nại này", HttpStatus.NOT_FOUND),
@@ -72,9 +80,11 @@ public enum ErrorCode {
     REVIEW_ALREADY_EXISTS(7003, "Bạn đã đánh giá chuyến đi này rồi", HttpStatus.BAD_REQUEST),
     REVIEW_ALREADY_REPLIED(7004, "Đánh giá này đã được Ban quản trị phản hồi", HttpStatus.BAD_REQUEST),
 
+    // ================= 8000: PROVIDERS & COSTS =================
     PROVIDER_NOT_FOUND(8001, "Không tìm thấy nhà cung cấp này", HttpStatus.NOT_FOUND),
     TOUR_COST_NOT_FOUND(8002, "Không tìm thấy chi phí tour này", HttpStatus.NOT_FOUND),
-;
+    ;
+
     ErrorCode(int code, String message, HttpStatusCode statusCode) {
         this.code = code;
         this.message = message;

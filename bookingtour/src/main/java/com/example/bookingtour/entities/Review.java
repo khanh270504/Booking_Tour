@@ -1,5 +1,6 @@
 package com.example.bookingtour.entities;
 
+import com.example.bookingtour.enums.ReviewStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -10,8 +11,7 @@ import java.time.Instant;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Getter
-@Setter
+@Builder
 public class Review {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -26,7 +26,7 @@ public class Review {
     private Tour tour;
 
     @ManyToOne
-    @JoinColumn(name = "booking_id")
+    @JoinColumn(name = "booking_id", unique = true)
     private Booking booking;
 
     @Column(name = "rating")
@@ -44,4 +44,8 @@ public class Review {
 
     @Column(name = "replied_at")
     private Instant repliedAt;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private ReviewStatus status = ReviewStatus.ACTIVE;
 }

@@ -2,6 +2,7 @@ package com.example.bookingtour.services;
 
 import com.example.bookingtour.IServices.ITourCostService;
 import com.example.bookingtour.dtos.request.operation.TourCostRequest;
+import com.example.bookingtour.dtos.response.PageResponse;
 import com.example.bookingtour.dtos.response.operation.TourCostResponse;
 import com.example.bookingtour.entities.Provider;
 import com.example.bookingtour.entities.TourCost;
@@ -14,11 +15,16 @@ import com.example.bookingtour.repositories.TourCostRepository;
 import com.example.bookingtour.repositories.TourScheduleRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import org.springframework.data.domain.Pageable;
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -107,7 +113,6 @@ public class TourCostServiceImpl implements ITourCostService {
             tourCost.setNote(note);
         }
 
-        // Tự động set Ngày thanh toán nếu Kế toán chuyển status thành PAID
         if (newStatus == TourCostStatus.PAID && tourCost.getPaidAt() == null) {
             tourCost.setPaidAt(Instant.now());
         }
@@ -123,5 +128,48 @@ public class TourCostServiceImpl implements ITourCostService {
             throw new AppException(ErrorCode.TOUR_COST_NOT_FOUND);
         }
         tourCostRepository.deleteById(id);
+    }
+    @Override
+    public List<TourCostResponse> getTourCostsByProviderId(Integer providerId) {
+        return tourCostRepository.findByProviderId(providerId).stream()
+                .map(TourCostResponse::fromEntity)
+                .collect(Collectors.toList());
+    }
+    @Override
+    public List<TourCostResponse> getAllTourCosts() {
+        return tourCostRepository.findAll().stream()
+                .map(TourCostResponse::fromEntity)
+                .collect(Collectors.toList());
+    }
+    @Override
+    public PageResponse<TourCostResponse> getTourCosts(int page, int size, String keyword) {
+        // Pageable của Spring Boot bắt đầu từ index 0, nên page - 1
+        Pageable pageable = PageRequest.of(page - 1, size);
+
+        Page<TourCost> costPage;
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            costPage = tourCostRepository.findByExpenseNameContainingIgnoreCase(keyword, pageable);
+        } else {
+            costPage = tourCostRepository.findAll(pageable);
+        }
+
+        List<TourCostResponse> costResponses = costPage.getContent().stream()
+                .map(TourCostResponse::fromEntity)
+                .collect(Collectors.toList());
+
+        return PageResponse.<TourCostResponse>builder()
+                .currentPage(page)
+                .totalPages(costPage.getTotalPages())
+                .pageSize(size)
+                .totalElements(costPage.getTotalElements())
+                .data(costResponses)
+                .build();
+    }
+    @Override
+    public Map<String, Double> getCostStatistics() {
+        Map<String, Double> stats = new HashMap<>();
+        stats.put("totalAmount", tourCostRepository.calculateTotalValidAmount());
+        stats.put("totalUnpaid", tourCostRepository.calculateTotalUnpaidAmount());
+        return stats;
     }
 }

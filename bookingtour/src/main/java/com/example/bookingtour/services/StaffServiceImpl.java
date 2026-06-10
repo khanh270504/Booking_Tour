@@ -3,7 +3,7 @@ package com.example.bookingtour.services;
 import com.example.bookingtour.IServices.IStaffService;
 import com.example.bookingtour.dtos.request.admin.StaffCreateRequest;
 import com.example.bookingtour.dtos.request.admin.StaffUpdateRequest;
-import com.example.bookingtour.dtos.response.profile.StaffProfileResponse; // Dùng duy nhất em này
+import com.example.bookingtour.dtos.response.profile.StaffProfileResponse;
 import com.example.bookingtour.entities.StaffProfile;
 import com.example.bookingtour.entities.User;
 import com.example.bookingtour.enums.UserStatus;
@@ -18,7 +18,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -35,7 +37,7 @@ public class StaffServiceImpl implements IStaffService {
 
     @Override
     @Transactional
-    public StaffProfileResponse createStaff(StaffCreateRequest request) { // 🎯 Đã đổi kiểu trả về
+    public StaffProfileResponse createStaff(StaffCreateRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new AppException(ErrorCode.USER_EXISTED);
         }
@@ -45,41 +47,44 @@ public class StaffServiceImpl implements IStaffService {
 
         var role = roleRepository.findById(request.getRoleName())
                 .orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_EXISTED));
-
+        String generatedEmployeeCode = "NV-" + UUID.randomUUID().toString().substring(0, 6).toUpperCase();
         var newUser = User.builder()
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .role(role)
                 .status(UserStatus.ACTIVE)
-                .userCode(request.getEmployeeCode())
+                .userCode(generatedEmployeeCode)
                 .build();
 
         newUser = userRepository.save(newUser);
 
         var staffProfile = StaffProfile.builder()
                 .user(newUser)
-                .employeeCode(request.getEmployeeCode())
+                .employeeCode(generatedEmployeeCode)
                 .fullName(request.getFullName())
+                .phone(request.getPhone())
                 .position(request.getPosition())
                 .department(department)
+                .hireDate(LocalDate.now())
                 .build();
 
-        // Lưu thông tin profile và hứng thực thể đã lưu xuống
         var savedProfile = staffProfileRepository.save(staffProfile);
         return StaffProfileResponse.fromStaffProfile(savedProfile);
     }
 
     @Override
     @Transactional
-    public StaffProfileResponse updateStaff(Integer userId, StaffUpdateRequest request) { // 🎯 Đã đổi kiểu trả về
+    public StaffProfileResponse updateStaff(Integer userId, StaffUpdateRequest request) {
         var user = userRepository.findById(userId)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
 
         var profile = staffProfileRepository.findByUser_Id(userId)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
 
-        if (request.getStatus() != null && !request.getStatus().isBlank()) {
-            user.setStatus(UserStatus.valueOf(request.getStatus()));
+        if (request.getRoleName() != null && !request.getRoleName().isBlank()) {
+            var role = roleRepository.findById(request.getRoleName())
+                    .orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_EXISTED));
+            user.setRole(role);
         }
 
         if (request.getDepartmentId() != null) {
@@ -101,21 +106,19 @@ public class StaffServiceImpl implements IStaffService {
             profile.setHireDate(request.getHireDate());
         }
 
-        // Vì nằm trong @Transactional, trạng thái thay đổi của User và Profile
-        // sẽ tự động đồng bộ. Ta trả về luôn Profile chứa thông tin mới nhất.
         return StaffProfileResponse.fromStaffProfile(profile);
     }
 
     @Override
     @Transactional
-    public void toggleStaffStatus(String employeeCode) {
-        var profile = staffProfileRepository.findByEmployeeCode(employeeCode)
+    public void toggleStaffStatus(Integer staffId) {
+        var profile = staffProfileRepository.findById(staffId)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
 
         var user = profile.getUser();
         user.setStatus(user.getStatus() == UserStatus.ACTIVE ? UserStatus.BLOCKED : UserStatus.ACTIVE);
+        userRepository.save(user); // Nhớ lưu lại nhé
     }
-
     @Override
     public StaffProfileResponse getStaffByCode(String employeeCode) {
         var profile = staffProfileRepository.findByEmployeeCode(employeeCode)

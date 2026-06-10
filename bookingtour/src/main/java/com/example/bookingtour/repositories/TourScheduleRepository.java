@@ -10,6 +10,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -31,4 +32,20 @@ public interface TourScheduleRepository extends JpaRepository<TourSchedule, Inte
     List<TourSchedule> findByTourId(Integer tourId);
 
     boolean existsByTourIdAndStatus(Integer tourId, ScheduleStatus status);
+
+    List<TourSchedule> findByDepartureDateLessThanEqualAndStatusIn(LocalDate date, List<ScheduleStatus> statuses);
+
+    List<TourSchedule> findByReturnDateLessThanAndStatus(LocalDate date, ScheduleStatus status);
+
+    @Query("SELECT s FROM TourSchedule s WHERE s.tour.id = :tourId " +
+            "AND s.departureDate >= :today " +
+            "AND s.status IN :statuses " +
+            "ORDER BY s.departureDate ASC")
+    List<TourSchedule> findValidSchedules(@Param("tourId") Integer tourId,
+                                          @Param("today") LocalDate today,
+                                          @Param("statuses") List<ScheduleStatus> statuses);
+    List<TourSchedule> findByStatus(ScheduleStatus status);
+
+
 }
+

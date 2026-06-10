@@ -4,6 +4,7 @@ import com.example.bookingtour.dtos.request.payment.ManualPaymentRequest;
 import com.example.bookingtour.dtos.response.payment.PaymentResponse;
 import com.example.bookingtour.entities.Booking;
 import com.example.bookingtour.entities.BookingStatusHistory;
+import com.example.bookingtour.entities.CustomerProfile;
 import com.example.bookingtour.entities.Payment;
 import com.example.bookingtour.enums.BookingStatus;
 import com.example.bookingtour.enums.PaymentMethod;
@@ -13,6 +14,7 @@ import com.example.bookingtour.exceptions.ErrorCode;
 import com.example.bookingtour.IServices.IPaymentService;
 import com.example.bookingtour.repositories.BookingRepository;
 import com.example.bookingtour.repositories.BookingStatusHistoryRepository;
+import com.example.bookingtour.repositories.CustomerProfileRepository;
 import com.example.bookingtour.repositories.PaymentRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -28,10 +31,11 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Slf4j
 public class PaymentServiceImpl implements IPaymentService {
-
+    private final CustomerProfileRepository customerProfileRepository;
     private final PaymentRepository paymentRepository;
     private final BookingRepository bookingRepository;
     private final BookingStatusHistoryRepository statusHistoryRepository;
+
     @Override
     @Transactional
     public PaymentResponse processManualPayment(ManualPaymentRequest request) {
@@ -74,13 +78,89 @@ public class PaymentServiceImpl implements IPaymentService {
         payment.setStatus(PaymentStatus.SUCCESS);
         Payment savedPayment = paymentRepository.save(payment);
 
-        // 4. Cập nhật trạng thái Booking dựa trên tổng tích lũy
         updateBookingStatus(booking, newTotal);
 
-        // 5. Tính số tiền còn lại và trả về Response DTO
-        BigDecimal remaining = booking.getTotalFinalPrice().subtract(newTotal);
+        CustomerProfile customer = booking.getCustomer();
+        if (customer != null) {
+            int pointsToAdd = request.getAmount().divide(new BigDecimal("10000")).intValue();
+            if (pointsToAdd > 0) {
+                int currentPoints = customer.getLoyaltyPoints() != null ? customer.getLoyaltyPoints() : 0;
+                customer.setLoyaltyPoints(currentPoints + pointsToAdd);
+                customerProfileRepository.save(customer);
+                log.info("Đã cộng {} điểm cho khách hàng ID {}", pointsToAdd, customer.getId());
+            }
+        }
 
+        BigDecimal remaining = booking.getTotalFinalPrice().subtract(newTotal);
         return PaymentResponse.fromPayment(savedPayment, remaining.max(BigDecimal.ZERO));
+    }
+
+    // 🎯 HÀM MỚI: XỬ LÝ KẾT QUẢ TRẢ VỀ TỪ VNPAY CỰC KỲ BÀI BẢN
+    @Override
+    @Transactional
+    public PaymentResponse processVNPayCallback(Map<String, String> queryParams) {
+        String responseCode = queryParams.get("vnp_ResponseCode");
+        String txnRef = queryParams.get("vnp_TxnRef");
+        String transactionNo = queryParams.get("vnp_TransactionNo");
+
+//        if (txnRef == null || transactionNo == null) {
+//            throw new AppException(ErrorCode.INVALID_PAYMENT_DATA);
+//        }
+
+        Integer bookingId = Integer.parseInt(txnRef.split("_")[0]);
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new AppException(ErrorCode.BOOKING_NOT_FOUND));
+
+        if (paymentRepository.existsByTransactionCode(transactionNo)) {
+            log.warn("Giao dịch VNPay {} đã được hệ thống xử lý trước đó.", transactionNo);
+            BigDecimal totalPaid = getTotalPaid(booking);
+            BigDecimal remaining = booking.getTotalFinalPrice().subtract(totalPaid).max(BigDecimal.ZERO);
+            return PaymentResponse.fromPayment(paymentRepository.findByTransactionCode(transactionNo), remaining);
+        }
+
+        // 3. Quy đổi số tiền từ VNPay về giá trị thực thực tế (VNPay nhân 100 gửi về)
+        BigDecimal amount = new BigDecimal(queryParams.get("vnp_Amount")).divide(new BigDecimal("100"));
+
+        Payment payment = new Payment();
+        payment.setBooking(booking);
+        payment.setAmount(amount);
+        payment.setTransactionCode(transactionNo);
+        payment.setPaymentMethod(PaymentMethod.VNPAY); // Chỗ này ông sửa lại theo đúng tên Enum VNPAY của ông nhé
+        payment.setIdempotencyKey(txnRef);
+
+        // 4. Kiểm tra mã phản hồi thành công ("00" là thành công)
+        if ("00".equals(responseCode)) {
+            payment.setStatus(PaymentStatus.SUCCESS);
+            Payment savedPayment = paymentRepository.save(payment);
+
+            // Tính toán tổng tiền thực tế sau khi cộng thêm khoản online mới này
+            BigDecimal newTotalPaid = getTotalPaid(booking);
+            updateBookingStatus(booking, newTotalPaid);
+
+            // Tự động cộng điểm loyalty cho khách hàng
+            CustomerProfile customer = booking.getCustomer();
+            if (customer != null) {
+                int pointsToAdd = amount.divide(new BigDecimal("10000")).intValue();
+                if (pointsToAdd > 0) {
+                    int currentPoints = customer.getLoyaltyPoints() != null ? customer.getLoyaltyPoints() : 0;
+                    customer.setLoyaltyPoints(currentPoints + pointsToAdd);
+                    customerProfileRepository.save(customer);
+                    log.info("VNPay: Đã tự động cộng {} điểm cho khách hàng ID {}", pointsToAdd, customer.getId());
+                }
+            }
+
+            BigDecimal remaining = booking.getTotalFinalPrice().subtract(newTotalPaid).max(BigDecimal.ZERO);
+            return PaymentResponse.fromPayment(savedPayment, remaining);
+        } else {
+            // Trường hợp khách huỷ thanh toán hoặc lỗi thẻ ngân hàng
+            payment.setStatus(PaymentStatus.FAILED);
+            Payment savedPayment = paymentRepository.save(payment);
+
+            BigDecimal totalPaid = getTotalPaid(booking);
+            BigDecimal remaining = booking.getTotalFinalPrice().subtract(totalPaid).max(BigDecimal.ZERO);
+            log.warn("Giao dịch VNPay thất bại hoặc bị hủy cho Booking ID {}. Mã lỗi: {}", bookingId, responseCode);
+            return PaymentResponse.fromPayment(savedPayment, remaining);
+        }
     }
 
     @Override
@@ -90,7 +170,6 @@ public class PaymentServiceImpl implements IPaymentService {
 
         List<Payment> payments = paymentRepository.findByBookingId(bookingId);
 
-        // Tính tổng đã trả (Live) để đảm bảo remainingAmount chính xác
         BigDecimal totalPaid = payments.stream()
                 .filter(p -> p.getStatus() == PaymentStatus.SUCCESS)
                 .map(Payment::getAmount)
@@ -98,7 +177,6 @@ public class PaymentServiceImpl implements IPaymentService {
 
         BigDecimal remaining = booking.getTotalFinalPrice().subtract(totalPaid).max(BigDecimal.ZERO);
 
-        // Map danh sách Entity sang danh sách DTO
         return payments.stream()
                 .map(p -> PaymentResponse.fromPayment(p, remaining))
                 .toList();
@@ -117,7 +195,6 @@ public class PaymentServiceImpl implements IPaymentService {
         payment.setStatus(PaymentStatus.FAILED);
         Booking booking = payment.getBooking();
 
-        // Tính lại tiền sau khi loại bỏ khoản thanh toán bị hủy
         BigDecimal remainingPaid = getTotalPaidExcluding(booking, paymentId);
         updateBookingStatus(booking, remainingPaid);
 
@@ -137,7 +214,6 @@ public class PaymentServiceImpl implements IPaymentService {
 
         return PaymentResponse.fromPayment(payment, remaining);
     }
-
 
     private BigDecimal getTotalPaid(Booking booking) {
         return paymentRepository.findByBookingId(booking.getId()).stream()
@@ -167,7 +243,6 @@ public class PaymentServiceImpl implements IPaymentService {
             booking.setStatus(newStatus);
             bookingRepository.save(booking);
 
-            // 🎯 GHI SỔ VÀO HISTORY CHO CÁI TIMELINE NÓ ĐỌC
             BookingStatusHistory history = BookingStatusHistory.builder()
                     .booking(booking)
                     .fromStatus(oldStatus)
@@ -185,6 +260,7 @@ public class PaymentServiceImpl implements IPaymentService {
     private String generateIdempotencyKey(Integer bookingId) {
         return UUID.randomUUID().toString() + "-B" + bookingId;
     }
+
     @Override
     @Transactional(readOnly = true)
     public List<PaymentResponse> getAllPayments() {

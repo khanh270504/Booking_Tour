@@ -5,9 +5,11 @@ import com.example.bookingtour.dtos.request.support.SupportTicketProcessRequest;
 import com.example.bookingtour.dtos.response.support.SupportTicketResponse;
 import com.example.bookingtour.enums.TicketStatus;
 import com.example.bookingtour.IServices.ISupportTicketService;
+import com.example.bookingtour.dtos.response.ApiResponse;
+
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
@@ -35,34 +37,72 @@ public class SupportTicketController {
             }
         }
 
-        // 3. Chốt chặn cuối cùng nếu Token bị móp méo
         throw new RuntimeException("Token không hợp lệ hoặc thiếu thông tin ID");
     }
 
+
     @PostMapping
-    public ResponseEntity<SupportTicketResponse> createTicket(
+    // @PreAuthorize("hasRole('CUSTOMER')")
+    public ApiResponse<SupportTicketResponse> createTicket(
             @Valid @RequestBody SupportTicketCreateRequest request) {
         Integer userId = getCurrentUserId();
-        return ResponseEntity.ok(ticketService.createTicket(request, userId));
+        SupportTicketResponse data = ticketService.createTicket(request, userId);
+
+        return ApiResponse.<SupportTicketResponse>builder()
+                .code(200) // Hoặc tùy cấu trúc ApiResponse của bạn
+                .message("Tạo yêu cầu hỗ trợ thành công")
+                .result(data)
+                .build();
     }
 
     @GetMapping("/my-tickets")
-    public ResponseEntity<List<SupportTicketResponse>> getMyTickets() {
+    // @PreAuthorize("hasRole('CUSTOMER')")
+    public ApiResponse<List<SupportTicketResponse>> getMyTickets() {
         Integer userId = getCurrentUserId();
-        return ResponseEntity.ok(ticketService.getMyTickets(userId));
+        return ApiResponse.<List<SupportTicketResponse>>builder()
+                .code(200)
+                .result(ticketService.getMyTickets(userId))
+                .build();
+    }
+
+    @PostMapping("/admin/create-for-customer")
+    // @PreAuthorize("hasAnyRole('ADMIN', 'SALE')")
+    public ApiResponse<SupportTicketResponse> createTicketByAdmin(
+            @Valid @RequestBody SupportTicketCreateRequest request) {
+
+        SupportTicketResponse data = ticketService.createTicketByAdmin(request);
+
+        return ApiResponse.<SupportTicketResponse>builder()
+                .code(200)
+                .message("Tạo Ticket hỗ trợ thành công")
+                .result(data)
+                .build();
     }
 
     @GetMapping("/admin/all")
-    public ResponseEntity<List<SupportTicketResponse>> getAllTickets(
+    // @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
+    public ApiResponse<List<SupportTicketResponse>> getAllTickets(
             @RequestParam(required = false) TicketStatus status) {
-        return ResponseEntity.ok(ticketService.getAllTicketsForAdmin(status));
+
+        return ApiResponse.<List<SupportTicketResponse>>builder()
+                .code(200)
+                .result(ticketService.getAllTicketsForAdmin(status))
+                .build();
     }
 
     @PutMapping("/admin/{id}/process")
-    public ResponseEntity<SupportTicketResponse> processTicket(
+    // @PreAuthorize("hasAnyRole('ADMIN', 'SALE')")
+    public ApiResponse<SupportTicketResponse> processTicket(
             @PathVariable Integer id,
             @Valid @RequestBody SupportTicketProcessRequest request) {
+
         Integer adminId = getCurrentUserId();
-        return ResponseEntity.ok(ticketService.processTicket(id, request, adminId));
+        SupportTicketResponse data = ticketService.processTicket(id, request, adminId);
+
+        return ApiResponse.<SupportTicketResponse>builder()
+                .code(200)
+                .message("Xử lý Ticket thành công")
+                .result(data)
+                .build();
     }
 }

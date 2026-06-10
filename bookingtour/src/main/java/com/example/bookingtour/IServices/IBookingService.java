@@ -28,4 +28,6 @@ public interface IBookingService {
 
     BookingResponse updateBookingStatus(Integer bookingId, String status, String reason);
     List<PassengerResponse> getPassengersByScheduleId(Integer scheduleId);
+
+    void cancelAllBookingsBySchedule(Integer scheduleId, String reason);
 }

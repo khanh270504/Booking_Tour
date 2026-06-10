@@ -18,4 +18,6 @@ public interface TourRepository extends JpaRepository<Tour, Integer>, JpaSpecifi
     @Query("SELECT new com.example.bookingtour.dtos.response.tour.TourSelectResponse(t.id, t.name) " +
             "FROM Tour t WHERE t.status = 'ACTIVE' ORDER BY t.id DESC")
     List<TourSelectResponse> getTourSelectList();
+
+
 }

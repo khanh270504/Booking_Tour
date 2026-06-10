@@ -5,6 +5,7 @@ import com.example.bookingtour.dtos.response.payment.PaymentResponse;
 import com.example.bookingtour.entities.Payment;
 
 import java.util.List;
+import java.util.Map;
 
 public interface IPaymentService {
     // 1. Tạo thanh toán thủ công
@@ -20,4 +21,5 @@ public interface IPaymentService {
     PaymentResponse cancelPayment(Integer paymentId);
 
     List<PaymentResponse> getAllPayments();
+    PaymentResponse processVNPayCallback(Map<String, String> queryParams);
 }

@@ -55,10 +55,9 @@ public class StaffController {
                 .build();
     }
 
-    // 5. Bật/Tắt trạng thái tài khoản nhân viên
     @PatchMapping("/{code}/toggle-status")
-    public ApiResponse<?> toggleStaffStatus(@PathVariable("code") String employeeCode) {
-        staffService.toggleStaffStatus(employeeCode);
+    public ApiResponse<?> toggleStaffStatus(@PathVariable("code") Integer staffId) {
+        staffService.toggleStaffStatus(staffId);
         return ApiResponse.builder()
                 .code(200)
                 .result("Đã thay đổi trạng thái tài khoản nhân viên thành công")

@@ -9,7 +9,7 @@ import java.time.Instant;
 
 @Entity
 @Table(name = "tour_costs")
-@Data // Đã bao hàm @Getter và @Setter rồi nên ta bỏ 2 cái kia đi cho code sạch
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -18,7 +18,6 @@ public class TourCost {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    // THÊM fetch = FetchType.LAZY: Để tối ưu tốc độ truy vấn, không bị lỗi N+1
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "schedule_id")
     private TourSchedule schedule;

@@ -14,6 +14,7 @@ public interface IScheduleService {
 
     List<ScheduleResponse> getSchedulesByTourId(Integer tourId);
 
+    List<ScheduleResponse> getSchedulesForAdmin(Integer tourId);
     ScheduleResponse updateScheduleStatus(Integer scheduleId, String status);
 
     ScheduleResponse getScheduleById(Integer id);

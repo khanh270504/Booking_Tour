@@ -9,6 +9,7 @@ import java.util.List;
 
 public interface ISupportTicketService {
     SupportTicketResponse createTicket(SupportTicketCreateRequest request, Integer userId);
+    SupportTicketResponse createTicketByAdmin(SupportTicketCreateRequest request);
     List<SupportTicketResponse> getMyTickets(Integer userId);
     List<SupportTicketResponse> getAllTicketsForAdmin(TicketStatus status);
     SupportTicketResponse processTicket(Integer ticketId, SupportTicketProcessRequest request, Integer adminId);

@@ -111,7 +111,14 @@ public class TourController {
                 .result("Khôi phục tour thành công!")
                 .build();
     }
-
+    @GetMapping("/admin/tour/{tourId}/schedules")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ApiResponse<List<ScheduleResponse>> getSchedulesForAdmin(@PathVariable Integer tourId) {
+        return ApiResponse.<List<ScheduleResponse>>builder()
+                .result(scheduleService.getSchedulesForAdmin(tourId)) // Hàm lấy full
+                .message("Lấy tất cả lịch trình thành công")
+                .build();
+    }
     // Quản lý Lịch trình (Schedules)
     @PostMapping("/admin/tours/schedules")
     public ApiResponse<ScheduleResponse> createSchedule(@RequestBody @Valid ScheduleCreateRequest request) {
