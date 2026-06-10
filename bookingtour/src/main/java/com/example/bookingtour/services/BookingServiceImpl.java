@@ -232,14 +232,14 @@ public class BookingServiceImpl implements IBookingService {
 
     @Override
     @Transactional
-    public BookingResponse cancelBooking(BookingCancelRequest request, Integer currentUserId) { // 🎯 1. Thêm tham số currentUserId
+    public BookingResponse cancelBooking(BookingCancelRequest request, Integer currentUserId) {
         Booking booking = bookingRepository.findById(request.getBookingId())
                 .orElseThrow(() -> new AppException(ErrorCode.BOOKING_NOT_FOUND));
 
         if (booking.getCustomer() == null ||
                 booking.getCustomer().getUser() == null ||
                 !booking.getCustomer().getUser().getId().equals(currentUserId)) {
-            log.warn("CẢNH BÁO BẢO MẬT: User {} cố tình hủy đơn hàng {} không thuộc sở hữu!", currentUserId, booking.getId());
+            log.warn("User {} cố tình hủy đơn hàng {} không thuộc sở hữu!", currentUserId, booking.getId());
             throw new AppException(ErrorCode.UNAUTHORIZED_ACTION);
         }
 
@@ -249,8 +249,16 @@ public class BookingServiceImpl implements IBookingService {
 
         updateInventory(booking.getSchedule(), bookingPassengerRepository.findByBookingId(booking.getId()).size());
 
+        if (booking.getVoucher() != null) {
+            Voucher v = booking.getVoucher();
+            v.setUsageCount(Math.max(0, v.getUsageCount() - 1));
+            voucherRepository.save(v);
+            log.info("Đã hoàn lại lượt sử dụng cho Voucher: {}", v.getCode());
+        }
+
         BookingStatus oldStatus = booking.getStatus();
         booking.setStatus(BookingStatus.CANCELLED);
+        booking.setVoucher(null);
         bookingRepository.save(booking);
 
         saveStatusHistory(booking, oldStatus, BookingStatus.CANCELLED, "Người dùng yêu cầu hủy", "User ID: " + currentUserId);
@@ -338,7 +346,15 @@ public class BookingServiceImpl implements IBookingService {
         int passengerCount = bookingPassengerRepository.findByBookingId(bookingId).size();
 
         if (newStatus == BookingStatus.CANCELLED) {
+
             updateInventory(booking.getSchedule(), passengerCount);
+            if (booking.getVoucher() != null) {
+                Voucher v = booking.getVoucher();
+                v.setUsageCount(Math.max(0, v.getUsageCount() - 1));
+                voucherRepository.save(v);
+                log.info("Đã hoàn lại lượt sử dụng cho Voucher: {}", v.getCode());
+            }
+
         } else if (oldStatus == BookingStatus.CANCELLED && (newStatus == BookingStatus.PENDING || newStatus == BookingStatus.CONFIRMED)) {
             if (booking.getSchedule().getAvailableSlots() < passengerCount) {
                 throw new AppException(ErrorCode.TOUR_FULL);
@@ -363,6 +379,36 @@ public class BookingServiceImpl implements IBookingService {
         return passengers.stream()
                 .map(PassengerResponse::fromPassenger)
                 .collect(Collectors.toList());
+    }
+    @Override
+    @Transactional
+    public void cancelAllBookingsBySchedule(Integer scheduleId, String reason) {
+        // 1. Tìm tất cả đơn hàng KHÔNG PHẢI trạng thái CANCELLED thuộc lịch trình này
+        List<Booking> bookings = bookingRepository.findByScheduleId(scheduleId).stream()
+                .filter(b -> b.getStatus() != BookingStatus.CANCELLED)
+                .collect(Collectors.toList());
+
+        log.info("Bắt đầu hủy tập thể {} đơn hàng cho lịch trình ID: {}", bookings.size(), scheduleId);
+
+        for (Booking booking : bookings) {
+            int passengerCount = bookingPassengerRepository.findByBookingId(booking.getId()).size();
+
+            updateInventory(booking.getSchedule(), passengerCount);
+
+            if (booking.getVoucher() != null) {
+                Voucher v = booking.getVoucher();
+                v.setUsageCount(Math.max(0, v.getUsageCount() - 1));
+                voucherRepository.save(v);
+            }
+
+            BookingStatus oldStatus = booking.getStatus();
+            booking.setStatus(BookingStatus.CANCELLED);
+            booking.setVoucher(null);
+            bookingRepository.save(booking);
+            saveStatusHistory(booking, oldStatus, BookingStatus.CANCELLED, reason, "ADMIN_SYSTEM");
+
+            log.info("Đã hủy đơn hàng: {} thuộc lịch trình {}", booking.getBookingCode(), scheduleId);
+        }
     }
 
 }

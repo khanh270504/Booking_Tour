@@ -2,6 +2,7 @@ package com.example.bookingtour.controllers;
 
 import com.example.bookingtour.IServices.ITourCostService;
 import com.example.bookingtour.dtos.request.operation.TourCostRequest;
+import com.example.bookingtour.dtos.response.PageResponse;
 import com.example.bookingtour.dtos.response.operation.TourCostResponse;
 import com.example.bookingtour.dtos.response.ApiResponse;
 import jakarta.validation.Valid;
@@ -17,6 +18,14 @@ import java.util.Map;
 public class TourCostController {
 
     private final ITourCostService tourCostService;
+//    @GetMapping
+//    public ApiResponse<List<TourCostResponse>> getAllTourCosts() {
+//        return ApiResponse.<List<TourCostResponse>>builder()
+//                .code(200)
+//                .message("Lấy toàn bộ danh sách phiếu chi thành công")
+//                .result(tourCostService.getAllTourCosts())
+//                .build();
+//    }
 
     @PostMapping
     public ApiResponse<TourCostResponse> createTourCost(@RequestBody @Valid TourCostRequest request) {
@@ -38,13 +47,21 @@ public class TourCostController {
                 .build();
     }
 
-    // 🎯 API này siêu quan trọng: Để hiển thị danh sách chi phí trong chi tiết 1 Schedule
     @GetMapping("/schedule/{scheduleId}")
     public ApiResponse<List<TourCostResponse>> getTourCostsByScheduleId(@PathVariable Integer scheduleId) {
         return ApiResponse.<List<TourCostResponse>>builder()
                 .code(200)
                 .message("Lấy danh sách chi phí của lịch trình thành công")
                 .result(tourCostService.getTourCostsByScheduleId(scheduleId))
+                .build();
+    }
+
+    @GetMapping("/provider/{providerId}")
+    public ApiResponse<List<TourCostResponse>> getTourCostsByProviderId(@PathVariable Integer providerId) {
+        return ApiResponse.<List<TourCostResponse>>builder()
+                .code(200)
+                .message("Lấy danh sách chi phí theo nhà cung cấp thành công")
+                .result(tourCostService.getTourCostsByProviderId(providerId))
                 .build();
     }
 
@@ -61,7 +78,6 @@ public class TourCostController {
     public ApiResponse<TourCostResponse> updateCostStatus(
             @PathVariable Integer id,
             @RequestBody Map<String, String> payload) {
-        // payload JSON: {"status": "PAID", "note": "Kế toán đã chuyển khoản"}
         String status = payload.get("status");
         String note = payload.get("note");
 
@@ -78,6 +94,26 @@ public class TourCostController {
         return ApiResponse.<Void>builder()
                 .code(200)
                 .message("Đã xóa khoản chi phí thành công")
+                .build();
+    }
+    @GetMapping
+    public ApiResponse<PageResponse<TourCostResponse>> getTourCosts(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String keyword) {
+
+        return ApiResponse.<PageResponse<TourCostResponse>>builder()
+                .code(200)
+                .message("Lấy danh sách phiếu chi thành công")
+                .result(tourCostService.getTourCosts(page, size, keyword))
+                .build();
+    }
+    @GetMapping("/stats")
+    public ApiResponse<Map<String, Double>> getCostStatistics() {
+        return ApiResponse.<Map<String, Double>>builder()
+                .code(200)
+                .message("Lấy thống kê chi phí thành công")
+                .result(tourCostService.getCostStatistics())
                 .build();
     }
 }

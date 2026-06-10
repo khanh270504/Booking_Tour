@@ -50,7 +50,7 @@ public class SecurityConfig {
                         .requestMatchers("/ws/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/bookings/lookup").permitAll()
                         .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
-
+                        .requestMatchers("/api/v1/payments/vnpay/callback").permitAll()                        .requestMatchers("/api/v1/payments/vnpay-ipn").permitAll()
                         .anyRequest().authenticated()
                 )
 

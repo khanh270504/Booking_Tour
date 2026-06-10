@@ -19,15 +19,18 @@ public class CustomerProfileResponse {
     private Integer loyaltyPoints;
 
     public static CustomerProfileResponse fromCustomerProfile(CustomerProfile profile) {
+        String email = (profile.getEmail() != null) ? profile.getEmail() :
+                (profile.getUser() != null) ? profile.getUser().getEmail() : null;
+
         return CustomerProfileResponse.builder()
-                .email((profile.getUser() != null) ? profile.getUser().getEmail() : null)
+                .email(email)
                 .fullName(profile.getFullName())
                 .phone(profile.getPhone())
                 .address(profile.getAddress())
                 .nationality(profile.getNationality())
                 .identityType(profile.getIdentityType())
                 .identityNumber(profile.getIdentityNumber())
-                .loyaltyPoints(profile.getLoyaltyPoints())
+                .loyaltyPoints(profile.getLoyaltyPoints() != null ? profile.getLoyaltyPoints() : 0)
                 .build();
     }
 }

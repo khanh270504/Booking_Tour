@@ -13,4 +13,10 @@ public interface CrmLeadRepository extends JpaRepository<CrmLead, Integer> {
 
     List<CrmLead> findByAssignedStaff_IdOrderByCreatedAtDesc(Integer staffId);
     List<CrmLead> findAllByOrderByCreatedAtDesc();
+
+    @Query("SELECT l.status, COUNT(l.id) FROM CrmLead l GROUP BY l.status ORDER BY l.status ASC")
+    List<Object[]> getLeadFunnel();
+
+    @Query("SELECT l.source, COUNT(l.id) FROM CrmLead l GROUP BY l.source")
+    List<Object[]> getLeadSources();
 }
