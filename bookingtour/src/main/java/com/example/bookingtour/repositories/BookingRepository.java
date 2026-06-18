@@ -16,7 +16,7 @@ import java.util.Optional;
 public interface BookingRepository extends JpaRepository<Booking, Integer> {
 
     List<Booking> findByContactEmailOrderByCreatedAtDesc(String email);
-
+    List<Booking> findByCreatedBy_Id(Integer staffUserId);
     Optional<Booking> findByBookingCodeAndContactEmail(String bookingCode, String contactEmail);
     long countByVoucherIdAndContactEmail(Integer voucherId, String contactEmail);
     Optional<Booking> findByBookingCode(String bookingCode);
@@ -32,9 +32,20 @@ public interface BookingRepository extends JpaRepository<Booking, Integer> {
     List<Object[]> countBookingsByStatus();
 
     @Query("SELECT EXTRACT(MONTH FROM b.createdAt), SUM(b.totalFinalPrice) " +
-            "FROM Booking b WHERE b.status = 'COMPLETED' AND EXTRACT(YEAR FROM b.createdAt) = EXTRACT(YEAR FROM CURRENT_DATE) " +
-            "GROUP BY EXTRACT(MONTH FROM b.createdAt) ORDER BY EXTRACT(MONTH FROM b.createdAt)")
+            "FROM Booking b " +
+            "WHERE b.status IN (com.example.bookingtour.enums.BookingStatus.CONFIRMED, com.example.bookingtour.enums.BookingStatus.COMPLETED) " +
+            "AND EXTRACT(YEAR FROM b.createdAt) = EXTRACT(YEAR FROM CURRENT_TIMESTAMP) " +
+            "GROUP BY EXTRACT(MONTH FROM b.createdAt) " +
+            "ORDER BY EXTRACT(MONTH FROM b.createdAt)")
     List<Object[]> getRevenueByMonth();
+    @Query("SELECT EXTRACT(DAY FROM b.createdAt), SUM(b.totalFinalPrice) " +
+            "FROM Booking b " +
+            "WHERE b.status IN (com.example.bookingtour.enums.BookingStatus.CONFIRMED, com.example.bookingtour.enums.BookingStatus.COMPLETED) " +
+            "AND EXTRACT(MONTH FROM b.createdAt) = EXTRACT(MONTH FROM CURRENT_TIMESTAMP) " +
+            "AND EXTRACT(YEAR FROM b.createdAt) = EXTRACT(YEAR FROM CURRENT_TIMESTAMP) " +
+            "GROUP BY EXTRACT(DAY FROM b.createdAt) " +
+            "ORDER BY EXTRACT(DAY FROM b.createdAt)")
+    List<Object[]> getRevenueByDayInCurrentMonth();
 
     @Query("SELECT d.name, COUNT(b.id) " +
             "FROM Booking b " +
@@ -49,16 +60,10 @@ public interface BookingRepository extends JpaRepository<Booking, Integer> {
             "FROM Booking b " +
             "JOIN b.createdBy u " +
             "JOIN StaffProfile sp ON sp.id = u.id " +
-            "WHERE b.status = 'COMPLETED' " +
-            "AND EXTRACT(MONTH FROM b.createdAt) = EXTRACT(MONTH FROM CURRENT_DATE) " +
-            "AND EXTRACT(YEAR FROM b.createdAt) = EXTRACT(YEAR FROM CURRENT_DATE) " +
+            "WHERE b.status IN (com.example.bookingtour.enums.BookingStatus.CONFIRMED, com.example.bookingtour.enums.BookingStatus.COMPLETED) " +
+            "AND EXTRACT(YEAR FROM b.createdAt) = EXTRACT(YEAR FROM CURRENT_TIMESTAMP) " +
             "GROUP BY sp.id, sp.fullName " +
             "ORDER BY SUM(b.totalFinalPrice) DESC")
     List<Object[]> getSalesLeaderboard();
-    @Query("SELECT EXTRACT(DAY FROM b.createdAt), SUM(b.totalFinalPrice) " +
-            "FROM Booking b WHERE b.status = 'COMPLETED' " +
-            "AND EXTRACT(MONTH FROM b.createdAt) = EXTRACT(MONTH FROM CURRENT_DATE) " +
-            "AND EXTRACT(YEAR FROM b.createdAt) = EXTRACT(YEAR FROM CURRENT_DATE) " +
-            "GROUP BY EXTRACT(DAY FROM b.createdAt) ORDER BY EXTRACT(DAY FROM b.createdAt)")
-    List<Object[]> getRevenueByDayInCurrentMonth();
+
 }

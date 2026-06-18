@@ -16,14 +16,21 @@ public interface TourCostRepository extends JpaRepository<TourCost, Integer> {
 
     @Query("SELECT COALESCE(SUM(t.amount), 0) FROM TourCost t WHERE t.status = 'UNPAID'")
     Double calculateTotalUnpaidAmount();
-    @Query("SELECT EXTRACT(MONTH FROM t.createdAt), SUM(t.amount) " +
-            "FROM TourCost t WHERE t.status != 'CANCELLED' AND EXTRACT(YEAR FROM t.createdAt) = EXTRACT(YEAR FROM CURRENT_DATE) " +
-            "GROUP BY EXTRACT(MONTH FROM t.createdAt) ORDER BY EXTRACT(MONTH FROM t.createdAt)")
+    @Query("SELECT EXTRACT(MONTH FROM s.departureDate), SUM(t.amount) " +
+            "FROM TourCost t " +
+            "JOIN t.schedule s " +
+            "WHERE t.status != com.example.bookingtour.enums.TourCostStatus.CANCELLED " + // Gọi chuẩn Enum bảo mật
+            "AND EXTRACT(YEAR FROM s.departureDate) = EXTRACT(YEAR FROM CURRENT_TIMESTAMP) " +
+            "GROUP BY EXTRACT(MONTH FROM s.departureDate) " +
+            "ORDER BY EXTRACT(MONTH FROM s.departureDate)")
     List<Object[]> getCostByMonth();
-    @Query("SELECT EXTRACT(DAY FROM t.createdAt), SUM(t.amount) " +
-            "FROM TourCost t WHERE t.status != 'CANCELLED' " +
-            "AND EXTRACT(MONTH FROM t.createdAt) = EXTRACT(MONTH FROM CURRENT_DATE) " +
-            "AND EXTRACT(YEAR FROM t.createdAt) = EXTRACT(YEAR FROM CURRENT_DATE) " +
-            "GROUP BY EXTRACT(DAY FROM t.createdAt) ORDER BY EXTRACT(DAY FROM t.createdAt)")
+    @Query("SELECT EXTRACT(DAY FROM s.departureDate), SUM(t.amount) " +
+            "FROM TourCost t " +
+            "JOIN t.schedule s " +
+            "WHERE t.status != com.example.bookingtour.enums.TourCostStatus.CANCELLED " +
+            "AND EXTRACT(MONTH FROM s.departureDate) = EXTRACT(MONTH FROM CURRENT_TIMESTAMP) " +
+            "AND EXTRACT(YEAR FROM s.departureDate) = EXTRACT(YEAR FROM CURRENT_TIMESTAMP) " +
+            "GROUP BY EXTRACT(DAY FROM s.departureDate) " +
+            "ORDER BY EXTRACT(DAY FROM s.departureDate)")
     List<Object[]> getCostByDayInCurrentMonth();
 }

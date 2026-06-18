@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
 @Data
+
 public class LeadCreateRequest {
 
     @NotBlank(message = "Tên khách hàng không được để trống")

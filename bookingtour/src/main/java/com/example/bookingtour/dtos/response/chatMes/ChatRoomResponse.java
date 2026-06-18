@@ -12,4 +12,5 @@ public class ChatRoomResponse {
     private String guestName;
     private String lastMessage;
     private LocalDateTime updatedAt;
+    private Integer unreadCount;
 }

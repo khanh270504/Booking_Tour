@@ -47,7 +47,9 @@ public class StaffServiceImpl implements IStaffService {
 
         var role = roleRepository.findById(request.getRoleName())
                 .orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_EXISTED));
-        String generatedEmployeeCode = "NV-" + UUID.randomUUID().toString().substring(0, 6).toUpperCase();
+
+        String generatedEmployeeCode = "NV-" + UUID.randomUUID().toString().substring(0, 5).toUpperCase();
+
         var newUser = User.builder()
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
@@ -56,7 +58,7 @@ public class StaffServiceImpl implements IStaffService {
                 .userCode(generatedEmployeeCode)
                 .build();
 
-        newUser = userRepository.save(newUser);
+        userRepository.save(newUser);
 
         var staffProfile = StaffProfile.builder()
                 .user(newUser)

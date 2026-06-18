@@ -79,10 +79,10 @@ public class CustomerProfileController {
     }
     @PutMapping("/admin/{id}")
     public ApiResponse<CustomerProfileResponse> updateAdminCustomer(
-            @PathVariable Integer customerId,
+            @PathVariable Integer id,
             @RequestBody CustomerUpdateProfileRequest request) {
         return ApiResponse.<CustomerProfileResponse>builder()
-                .result(customerService.updateAdminCustomer(customerId, request))
+                .result(customerService.updateAdminCustomer(id, request))
                 .build();
     }
 }

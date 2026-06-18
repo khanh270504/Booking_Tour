@@ -8,6 +8,8 @@ import com.example.bookingtour.dtos.response.ApiResponse;
 import com.example.bookingtour.enums.LeadStatus;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -50,11 +52,23 @@ public class LeadController {
     }
 
     @PatchMapping("/{id}/status")
-    public ApiResponse<?> updateStatus(@PathVariable("id") Integer id, @RequestParam("status") LeadStatus status ) {
-        leadService.updateLeadStatus(id, status);
+    public ApiResponse<?> updateStatus(
+            @PathVariable("id") Integer id,
+            @RequestParam("status") LeadStatus status,
+            Authentication authentication) {
+
+        Integer userInternalId = null;
+        if (authentication != null && authentication.getPrincipal() instanceof Jwt jwt) {
+            Long uId = jwt.getClaim("userId");
+            if (uId != null) {
+                userInternalId = uId.intValue();
+            }
+        }
+
         return ApiResponse.builder()
                 .code(200)
                 .message("Cập nhật trạng thái thành công")
+                .result(leadService.changeLeadStatus(id, status, userInternalId)) // Chạy hàm đẻ Booking + Payment ngầm
                 .build();
     }
 }

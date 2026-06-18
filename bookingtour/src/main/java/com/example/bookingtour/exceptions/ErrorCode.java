@@ -73,7 +73,9 @@ public enum ErrorCode {
     // ================= 6000: CRM TICKETS & LEADS =================
     LEAD_NOT_FOUND(6001, "Không tìm thấy thông tin khách hàng tiềm năng", HttpStatus.NOT_FOUND),
     TICKET_NOT_FOUND(6002, "Không tìm thấy phiếu hỗ trợ/khiếu nại này", HttpStatus.NOT_FOUND),
-
+    INVALID_MESSAGE_CONTENT(6003, "Nội dung tin nhắn không được bỏ trống", HttpStatus.BAD_REQUEST),
+    UNAUTHORIZED_CHAT_ACCESS(6004, "Bạn không có quyền truy cập vào phòng chat này", HttpStatus.FORBIDDEN),
+    LEAD_ALREADY_WON(6005, "Lead đã trạng thái Thành Công", HttpStatus.BAD_REQUEST),
     // ================= 7000: REVIEWS (ĐÁNH GIÁ) =================
     REVIEW_NOT_FOUND(7001, "Không tìm thấy bài đánh giá này", HttpStatus.NOT_FOUND),
     REVIEW_NOT_ALLOWED(7002, "Chỉ được đánh giá sau khi đã hoàn thành chuyến đi", HttpStatus.BAD_REQUEST),

@@ -8,8 +8,13 @@ import com.example.bookingtour.services.VNPayService; // Import thêm cái này
 import jakarta.servlet.http.HttpServletRequest; // Import thêm cái này
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
+import java.net.URI;
 import java.util.List;
 import java.util.Map;
 
@@ -36,20 +41,31 @@ public class PaymentController {
     }
 
     @GetMapping("/vnpay/callback")
-    public ApiResponse<PaymentResponse> vnpayCallback(@RequestParam Map<String, String> queryParams) {
+    public ResponseEntity<Void> vnpayCallback(@RequestParam Map<String, String> queryParams) {
         PaymentResponse response = paymentService.processVNPayCallback(queryParams);
 
-        String message = "00".equals(queryParams.get("vnp_ResponseCode"))
-                ? "Thanh toán qua VNPay thành công"
-                : "Thanh toán thất bại hoặc giao dịch đã bị hủy";
+        String txnRef = queryParams.get("vnp_TxnRef");
+        String bookingId = txnRef.split("_")[0];
+        String responseCode = queryParams.get("vnp_ResponseCode");
+        String status = "00".equals(responseCode) ? "success" : "failed";
 
+        HttpHeaders headers = new HttpHeaders();
+        headers.setLocation(URI.create("http://localhost:5173/payment/" + bookingId + "?status=" + status));
+
+        return new ResponseEntity<>(headers, HttpStatus.FOUND);
+    }
+    @PutMapping("/{id}/amount")
+    public ApiResponse<PaymentResponse> updatePaymentAmount(
+            @PathVariable Integer id,
+            @RequestParam BigDecimal correctAmount) {
+
+        PaymentResponse response = paymentService.updatePaymentAmount(id, correctAmount);
         return ApiResponse.<PaymentResponse>builder()
                 .code(200)
-                .message(message)
+                .message("Điều chỉnh số tiền giao dịch thành công")
                 .result(response)
                 .build();
     }
-
 
     @PostMapping("/manual")
     public ApiResponse<PaymentResponse> createManualPayment(@Valid @RequestBody ManualPaymentRequest request) {
@@ -81,15 +97,6 @@ public class PaymentController {
                 .build();
     }
 
-    @PatchMapping("/{paymentId}/cancel")
-    public ApiResponse<PaymentResponse> cancelPayment(@PathVariable Integer paymentId) {
-        PaymentResponse response = paymentService.cancelPayment(paymentId);
-        return ApiResponse.<PaymentResponse>builder()
-                .code(200)
-                .message("Hủy giao dịch thành công")
-                .result(response)
-                .build();
-    }
 
     @GetMapping("/{id}")
     public ApiResponse<PaymentResponse> getPaymentDetail(@PathVariable Integer id) {
@@ -99,4 +106,6 @@ public class PaymentController {
                 .result(paymentService.getPaymentById(id))
                 .build();
     }
+
+
 }

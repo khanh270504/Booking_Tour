@@ -5,6 +5,5 @@ public enum ScheduleStatus {
     FULL,
     DEPARTED,
     COMPLETED,
-    CANCELED,
     CANCELLED
 }

@@ -129,16 +129,31 @@ public class AuthenticationService {
     }
 
     private String generateToken(User user, long duration, String type) {
+        String fullName = "Thành viên";
+
+        String scope = buildScope(user);
+
+        if (scope.contains("ROLE_CUSTOMER")) {
+            fullName = customerProfileRepository.findByUser_Id(user.getId())
+                    .map(CustomerProfile::getFullName)
+                    .orElse(user.getEmail()); // fallback lấy email nếu profile trống
+        } else if (scope.contains("ROLE_ADMIN") || scope.contains("ROLE_SALE") || scope.contains("ROLE_KT")) {
+            fullName = staffProfileRepository.findByUser_Id(user.getId())
+                    .map(StaffProfile::getFullName)
+                    .orElse("Nhân viên hệ thống");
+        }
+
         JWSHeader header = new JWSHeader(JWSAlgorithm.HS512);
         JWTClaimsSet jwtClaimsSet = new JWTClaimsSet.Builder()
                 .claim("userId", user.getId())
                 .claim("userCode", user.getUserCode())
+                .claim("fullName", fullName)
                 .subject(user.getEmail())
                 .issuer("bookingtour.com")
                 .issueTime(new Date())
                 .expirationTime(new Date(Instant.now().plus(duration, ChronoUnit.SECONDS).toEpochMilli()))
                 .jwtID(UUID.randomUUID().toString())
-                .claim("scope", buildScope(user))
+                .claim("scope", scope)
                 .claim("type", type)
                 .build();
 

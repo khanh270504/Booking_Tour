@@ -87,7 +87,6 @@ public class TourCostServiceImpl implements ITourCostService {
 
     @Override
     public List<TourCostResponse> getTourCostsByScheduleId(Integer scheduleId) {
-        // Sếp nhớ tạo hàm findByScheduleId trong TourCostRepository nhé
         return tourCostRepository.findByScheduleId(scheduleId).stream()
                 .map(TourCostResponse::fromEntity)
                 .collect(Collectors.toList());
@@ -143,7 +142,6 @@ public class TourCostServiceImpl implements ITourCostService {
     }
     @Override
     public PageResponse<TourCostResponse> getTourCosts(int page, int size, String keyword) {
-        // Pageable của Spring Boot bắt đầu từ index 0, nên page - 1
         Pageable pageable = PageRequest.of(page - 1, size);
 
         Page<TourCost> costPage;
