@@ -18,6 +18,7 @@ public class TourCostResponse {
     // Thông tin Schedule
     private Integer scheduleId;
     private String tourName;
+    private String scheduleName;
 
     // Thông tin Provider
     private Integer providerId;
@@ -37,7 +38,6 @@ public class TourCostResponse {
 
         return TourCostResponse.builder()
                 .id(entity.getId())
-                // Tránh NullPointerException bằng cách check != null
                 .scheduleId(entity.getSchedule() != null ? entity.getSchedule().getId() : null)
                 .tourName((entity.getSchedule() != null && entity.getSchedule().getTour() != null)
                         ? entity.getSchedule().getTour().getName() : "Không xác định")

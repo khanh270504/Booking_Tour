@@ -18,7 +18,7 @@ public class Conversation {
 
     private Long customerId;
 
-    // admin đang support
+    private String guestId;
     private Long adminId;
 
     // OPEN / CLOSED

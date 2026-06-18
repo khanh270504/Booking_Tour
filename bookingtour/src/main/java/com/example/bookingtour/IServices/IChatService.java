@@ -11,6 +11,6 @@ import java.util.List;
 public interface IChatService {
 
     ChatMessage saveMessage(ChatRequest request, Principal principal);
-    List<ChatMessage> getMessages(String conversationId);
+    List<ChatMessage> getMessages(String conversationId, Principal principal);
     List<ChatRoomResponse> getActiveRooms();
 }

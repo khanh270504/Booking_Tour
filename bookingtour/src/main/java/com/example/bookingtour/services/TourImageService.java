@@ -15,6 +15,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 @Service
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
@@ -46,5 +50,31 @@ public class TourImageService {
         }
         String fileName = minioService.uploadFile(file);
         return fileName;
+    }
+    public List<Map<String, Object>> getAllRawImages() {
+        return tourImageRepository.findAll().stream()
+                .map(ti -> {
+                    Map<String, Object> map = new HashMap<>();
+                    map.put("id", ti.getId());
+                    map.put("imageUrl", ti.getImageUrl());
+                    map.put("tourId", ti.getTour() != null ? ti.getTour().getId() : null);
+                    return map;
+                })
+                .toList();
+    }
+    @Transactional
+    public void deleteTourImage(Integer imageId) throws Exception {
+        TourImage tourImage = tourImageRepository.findById(imageId)
+                .orElseThrow(() -> new AppException(ErrorCode.TOUR_NOT_FOUND)); // Hoặc lỗi IMAGE_NOT_FOUND của sếp
+
+        if (tourImage.getImageUrl() != null && !tourImage.getImageUrl().isEmpty()) {
+            try {
+                minioService.deleteFile(tourImage.getImageUrl());
+            } catch (Exception e) {
+                System.out.println("Cảnh báo: Không tìm thấy file trên MinIO để xóa, tiến hành xóa DB luôn.");
+            }
+        }
+
+        tourImageRepository.delete(tourImage);
     }
 }

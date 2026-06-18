@@ -8,12 +8,14 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
 public interface CustomerProfileRepository extends JpaRepository<CustomerProfile, Integer> {
     Optional<CustomerProfile> findByUser_Id(Integer id);
     Optional<CustomerProfile> findByEmail(String email);
+    List<CustomerProfile> findByUser_IdIn(List<Integer> userIds);
     @Query("SELECT c FROM CustomerProfile c LEFT JOIN c.user u WHERE " +
             "(:keyword IS NULL OR :keyword = '' OR " +
             "LOWER(c.fullName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +

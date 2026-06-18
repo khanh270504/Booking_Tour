@@ -112,7 +112,7 @@ public class TourController {
                 .build();
     }
     @GetMapping("/admin/tour/{tourId}/schedules")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN', 'KT')")
     public ApiResponse<List<ScheduleResponse>> getSchedulesForAdmin(@PathVariable Integer tourId) {
         return ApiResponse.<List<ScheduleResponse>>builder()
                 .result(scheduleService.getSchedulesForAdmin(tourId)) // Hàm lấy full
@@ -224,6 +224,34 @@ public class TourController {
         return ApiResponse.<String>builder()
                 .result(fileUrl)
                 .message("Đã đẩy ảnh lên kho MinIO thành công!")
+                .build();
+    }
+    @GetMapping("/admin/tours/images/all")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ApiResponse<List<java.util.Map<String, Object>>> getAllRawImages() throws Exception {
+        return ApiResponse.<List<java.util.Map<String, Object>>>builder()
+                .code(200)
+                .message("Lấy danh sách hình ảnh từ kho MinIO thành công sếp ơi")
+                .result(tourImageService.getAllRawImages())
+                .build();
+    }
+    @DeleteMapping("/admin/tours/images/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ApiResponse<String> deleteTourImage(@PathVariable Integer id) throws Exception {
+        tourImageService.deleteTourImage(id);
+        return ApiResponse.<String>builder()
+                .code(200)
+                .message("Đã xóa ảnh thành công khỏi DB và hệ thống lưu trữ MinIO sếp ơi!")
+                .result("Success")
+                .build();
+    }
+    @PutMapping("/admin/schedules/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ApiResponse<ScheduleResponse> updateSchedule(@PathVariable Integer id, @RequestBody @Valid ScheduleCreateRequest request) {
+        return ApiResponse.<ScheduleResponse>builder()
+                .code(200)
+                .message("Cập nhật giá vé và cấu hình lịch trình thành công sếp ơi")
+                .result(scheduleService.updateSchedule(id, request))
                 .build();
     }
 }

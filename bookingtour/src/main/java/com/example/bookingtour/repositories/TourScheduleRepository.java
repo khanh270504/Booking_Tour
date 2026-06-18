@@ -45,7 +45,7 @@ public interface TourScheduleRepository extends JpaRepository<TourSchedule, Inte
                                           @Param("today") LocalDate today,
                                           @Param("statuses") List<ScheduleStatus> statuses);
     List<TourSchedule> findByStatus(ScheduleStatus status);
-
-
+    List<TourSchedule> findByTourIdIn(List<Integer> tourIds);
+    Optional<TourSchedule> findFirstByTourIdAndStatus(Integer tourId, ScheduleStatus status);
 }
 

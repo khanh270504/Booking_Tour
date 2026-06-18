@@ -12,4 +12,5 @@ import java.util.Optional;
 @Repository
 public interface TourPricingConfigRepository extends JpaRepository<TourPricingConfig, Integer> {
     List<TourPricingConfig> findByScheduleId(Integer scheduleId);
+    List<TourPricingConfig> findByScheduleIdIn(List<Integer> scheduleIds);
 }

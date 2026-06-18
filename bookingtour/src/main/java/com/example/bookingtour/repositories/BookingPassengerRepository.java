@@ -12,4 +12,5 @@ public interface BookingPassengerRepository extends JpaRepository<BookingPasseng
     @Query("SELECT bp FROM BookingPassenger bp " +
             "WHERE bp.booking.schedule.id = :scheduleId")
     List<BookingPassenger> findPassengersByScheduleId(@Param("scheduleId") Integer scheduleId);
+    List<BookingPassenger> findByBookingIdIn(List<Integer> bookingIds);
 }

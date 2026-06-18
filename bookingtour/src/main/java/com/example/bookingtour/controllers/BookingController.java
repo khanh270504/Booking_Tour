@@ -25,17 +25,17 @@ public class BookingController {
 
     private final IBookingService bookingService;
 
+    // 🎯 SỬA 1: Ép kiểu an toàn bằng cách dùng .toString() -> Parse sang Integer, thách kẹo token lỗi được kiểu dữ liệu
     private Integer getCurrentUserIdSafely() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth != null && auth.isAuthenticated() && auth.getPrincipal() instanceof Jwt) {
-            Jwt jwt = (Jwt) auth.getPrincipal();
-            Long userId = jwt.getClaim("userId");
-            return userId != null ? userId.intValue() : null;
+        if (auth != null && auth.isAuthenticated() && auth.getPrincipal() instanceof Jwt jwt) {
+            Object userIdObj = jwt.getClaim("userId");
+            if (userIdObj != null) {
+                return Integer.parseInt(userIdObj.toString());
+            }
         }
         return null;
     }
-
-
 
     @PostMapping("/bookings")
     public ApiResponse<BookingResponse> createBooking(@RequestBody BookingCreateRequest request) {
@@ -46,7 +46,7 @@ public class BookingController {
                 currentUserId);
 
         return ApiResponse.<BookingResponse>builder()
-                .code(201) // Mã HTTP Created
+                .code(201)
                 .message("Tạo đơn đặt tour thành công")
                 .result(bookingService.createBooking(request, currentUserId))
                 .build();
@@ -114,10 +114,10 @@ public class BookingController {
                 .build();
     }
 
-
     @GetMapping("/admin/bookings")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SALE', 'ACCOUNTANT')")
     public ApiResponse<List<BookingResponse>> getAllBookingsForAdmin() {
+        log.info("API: Lấy danh sách đơn hàng quản trị.");
         return ApiResponse.<List<BookingResponse>>builder()
                 .code(200)
                 .message("Lấy danh sách đơn hàng thành công")
@@ -126,7 +126,7 @@ public class BookingController {
     }
 
     @PatchMapping("/admin/bookings/{id}/status")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SALE', 'ACCOUNTANT')")
     public ApiResponse<BookingResponse> updateBookingStatus(
             @PathVariable("id") Integer id,
             @RequestBody Map<String, String> payload) {
@@ -140,6 +140,7 @@ public class BookingController {
                 .result(bookingService.updateBookingStatus(id, status, reason))
                 .build();
     }
+
     @GetMapping("/bookings/schedule/{scheduleId}/passengers")
     public ApiResponse<List<PassengerResponse>> getPassengersBySchedule(@PathVariable Integer scheduleId) {
         log.info("API: Hệ thống yêu cầu xuất danh sách đoàn cho Schedule ID: {}", scheduleId);

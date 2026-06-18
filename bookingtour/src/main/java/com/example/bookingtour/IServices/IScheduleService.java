@@ -29,4 +29,5 @@ public interface IScheduleService {
     List<SurchargeResponse> getSurchargesBySchedule(Integer scheduleId);
 
     void deleteSurcharge(Integer id);
+    ScheduleResponse updateSchedule(Integer id, ScheduleCreateRequest request);
 }

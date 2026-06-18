@@ -39,7 +39,7 @@ public class PricingServiceImpl implements IPricingService {
     public PricingResultDto calculatePrice(Integer scheduleId, List<PassengerRequest> passengers, String voucherCode, Integer tourId) {
         log.info("--- Bắt đầu tính giá cho Lịch trình ID: {} ---", scheduleId);
 
-        // 1. Lấy cấu hình giá gốc
+        //  Lấy cấu hình giá gốc
         List<TourPricingConfig> pricingConfigs = pricingRepository.findByScheduleId(scheduleId);
         if (pricingConfigs.isEmpty()) {
             throw new AppException(ErrorCode.PRICING_NOT_FOUND);
@@ -51,7 +51,7 @@ public class PricingServiceImpl implements IPricingService {
                         TourPricingConfig::getPrice
                 ));
 
-        // 2. Tính tổng giá gốc
+        //  Tính tổng giá gốc
         BigDecimal totalOriginal = passengers.stream()
                 .map(req -> {
                     try {
@@ -69,7 +69,7 @@ public class PricingServiceImpl implements IPricingService {
                 })
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        // 3. Tính phụ thu bắt buộc
+        //  Tính phụ thu bắt buộc
         List<TourSurcharge> mandatorySurcharges = surchargeRepository.findByScheduleId(scheduleId).stream()
                 .filter(TourSurcharge::getIsMandatory)
                 .collect(Collectors.toList());
@@ -80,17 +80,17 @@ public class PricingServiceImpl implements IPricingService {
 
         BigDecimal totalSurcharge = surchargePerPerson.multiply(BigDecimal.valueOf(passengers.size()));
 
-        // 🎯 TÍNH TỔNG TIỀN TRƯỚC KHI GIẢM GIÁ (Gốc + Phụ thu)
+        //  TÍNH TỔNG TIỀN TRƯỚC KHI GIẢM GIÁ (Gốc + Phụ thu)
         BigDecimal totalBeforeDiscount = totalOriginal.add(totalSurcharge);
         BigDecimal totalDiscount = BigDecimal.ZERO;
 
-        // 🎯 4. LOGIC XỬ LÝ VOUCHER Ở ĐÂY
+        //  LOGIC XỬ LÝ VOUCHER
         if (voucherCode != null && !voucherCode.trim().isEmpty()) {
             // Tạo Request để ném sang VoucherService
             VoucherApplyRequest applyRequest = new VoucherApplyRequest();
             applyRequest.setCode(voucherCode);
-            applyRequest.setOrderTotal(totalBeforeDiscount); // Đưa tổng tiền cho nó tính %
-            applyRequest.setTourId(tourId); // Đưa tourId để nó check xem mã có hợp lệ với tour này không
+            applyRequest.setOrderTotal(totalBeforeDiscount);
+            applyRequest.setTourId(tourId);
 
             // Gọi hàm tính toán siêu việt anh em mình vừa viết
             VoucherApplyResponse voucherResponse = voucherService.applyVoucher(applyRequest);
@@ -100,7 +100,7 @@ public class PricingServiceImpl implements IPricingService {
             log.info("=> Đã áp dụng mã {}: Giảm {} VNĐ", voucherCode, totalDiscount);
         }
 
-        // 5. Tính toán cuối cùng
+        //  Tính toán cuối cùng
         BigDecimal totalFinal = totalBeforeDiscount.subtract(totalDiscount);
 
         if (totalFinal.compareTo(BigDecimal.ZERO) < 0) {
@@ -116,7 +116,6 @@ public class PricingServiceImpl implements IPricingService {
                 .totalDiscount(totalDiscount)
                 .totalFinalPrice(totalFinal)
                 .unitPriceMap(priceMap)
-                // Ông giáo có thể cân nhắc thêm voucherCode vào PricingResultDto để FE dễ quản lý
                 .build();
     }
 }

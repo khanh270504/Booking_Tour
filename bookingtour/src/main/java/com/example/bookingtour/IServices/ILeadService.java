@@ -18,5 +18,5 @@ public interface ILeadService {
     LeadResponse getLeadDetail(Integer id);
 
     LeadResponse updateLead(Integer leadId, LeadUpdateRequest leadUpdateRequest);
-
+    LeadResponse changeLeadStatus(Integer leadId, LeadStatus newStatus, Integer userInternalId);
 }

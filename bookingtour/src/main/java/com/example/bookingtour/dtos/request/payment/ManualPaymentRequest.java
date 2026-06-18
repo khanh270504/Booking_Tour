@@ -20,4 +20,5 @@ public class ManualPaymentRequest {
 
     private String transactionCode;
     private String note;
+    private String idempotencyKey;
 }

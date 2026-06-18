@@ -41,14 +41,12 @@ public class ScheduleServiceImpl implements IScheduleService {
     private ScheduleResponse enrichScheduleResponse(TourSchedule schedule) {
         ScheduleResponse sDto = ScheduleResponse.fromSchedule(schedule);
 
-        // Lấy và nạp Cấu hình giá
         List<TourPricingConfig> pricings = pricingRepository.findByScheduleId(schedule.getId());
         if (pricings != null) {
             sDto.setPricings(pricings.stream()
                     .map(PricingConfigResponse::fromPricingConfig).toList());
         }
 
-        // Lấy và nạp Phụ phí
         List<TourSurcharge> surcharges = surchargeRepository.findByScheduleId(schedule.getId());
         if (surcharges != null) {
             sDto.setSurcharges(surcharges.stream()
@@ -69,7 +67,6 @@ public class ScheduleServiceImpl implements IScheduleService {
     @Override
     @Transactional
     public ScheduleResponse createSchedule(ScheduleCreateRequest request) {
-        // --- NGHIỆP VỤ 1: Kiểm tra tính hợp lệ của thời gian ---
         if (request.getDepartureDate() == null || request.getReturnDate() == null) {
             throw new AppException(ErrorCode.INVALID_DATE_FORMAT);
         }
@@ -89,10 +86,8 @@ public class ScheduleServiceImpl implements IScheduleService {
         Tour tour = tourRepository.findById(request.getTourId())
                 .orElseThrow(() -> new AppException(ErrorCode.TOUR_NOT_FOUND));
 
-        // Đã chuẩn hóa kiểu dữ liệu sang LocalDate an toàn
         String generatedCode = generateScheduleCode(tour, request.getDepartureDate());
 
-        // 1. Lưu Schedule trước để sinh ra ID trong Database
         TourSchedule schedule = TourSchedule.builder()
                 .tour(tour)
                 .departureDate(request.getDepartureDate())
@@ -106,7 +101,6 @@ public class ScheduleServiceImpl implements IScheduleService {
 
         TourSchedule savedSchedule = scheduleRepository.save(schedule);
 
-        // 2. Lưu danh sách Cấu hình Giá (Pricings) đi kèm
         List<TourPricingConfig> pricingConfigs = request.getPricings().stream()
                 .map(pricingDto -> TourPricingConfig.builder()
                         .schedule(savedSchedule)
@@ -117,7 +111,6 @@ public class ScheduleServiceImpl implements IScheduleService {
                 .toList();
         pricingRepository.saveAll(pricingConfigs);
 
-        // 3. Lưu danh sách Phụ phí (Surcharges) đi kèm nếu có
         if (request.getSurcharges() != null && !request.getSurcharges().isEmpty()) {
             List<TourSurcharge> surcharges = request.getSurcharges().stream()
                     .map(surchargeDto -> TourSurcharge.builder()
@@ -148,11 +141,11 @@ public class ScheduleServiceImpl implements IScheduleService {
 
         ScheduleStatus currentStatus = schedule.getStatus();
 
-        if (currentStatus == ScheduleStatus.CANCELED || currentStatus == ScheduleStatus.COMPLETED) {
+        if (currentStatus == ScheduleStatus.CANCELLED || currentStatus == ScheduleStatus.COMPLETED) {
             throw new AppException(ErrorCode.CANNOT_UPDATE_FINAL_STATUS);
         }
 
-        if (newStatus == ScheduleStatus.CANCELED) {
+        if (newStatus == ScheduleStatus.CANCELLED) {
             int totalBooked = schedule.getMaxSlots() - schedule.getAvailableSlots();
 
             if (totalBooked > 0) {
@@ -163,7 +156,6 @@ public class ScheduleServiceImpl implements IScheduleService {
             }
         }
 
-        // 3. Cập nhật trạng thái
         schedule.setStatus(newStatus);
         scheduleRepository.save(schedule);
 
@@ -252,19 +244,61 @@ public class ScheduleServiceImpl implements IScheduleService {
             throw new AppException(ErrorCode.INVALID_DEPARTURE_DATE);
         }
 
-        // Format định dạng ngày thành ddMMyy (Ví dụ: 251224)
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("ddMMyy");
         String dateStr = departureDate.format(formatter);
 
-        // Lấy định danh Tour (Ưu tiên tourcode, nếu không có thì lấy chữ TOUR + ID)
         String tourIdentifier = (tour.getTourcode() != null && !tour.getTourcode().trim().isEmpty())
                 ? tour.getTourcode().trim().toUpperCase()
                 : "TOUR" + tour.getId();
 
         String baseCode = tourIdentifier + "-" + dateStr;
-
-        // Thêm hậu tố ngẫu nhiên để tránh trùng lặp lịch trình khởi hành cùng một ngày
         String randomSuffix = UUID.randomUUID().toString().substring(0, 3).toUpperCase();
         return baseCode + "-" + randomSuffix;
+    }
+    @Override
+    @Transactional
+    public ScheduleResponse updateSchedule(Integer id, ScheduleCreateRequest request) {
+        TourSchedule schedule = scheduleRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.SCHEDULE_NOT_FOUND));
+
+        if (schedule.getStatus() == ScheduleStatus.CANCELLED || schedule.getStatus() == ScheduleStatus.COMPLETED) {
+            throw new AppException(ErrorCode.CANNOT_UPDATE_FINAL_STATUS);
+        }
+
+        int totalBooked = schedule.getMaxSlots() - schedule.getAvailableSlots();
+        if (request.getMaxSlots() < totalBooked) {
+            throw new AppException(ErrorCode.INVALID_STATUS);
+        }
+
+        schedule.setMaxSlots(request.getMaxSlots());
+        schedule.setAvailableSlots(request.getMaxSlots() - totalBooked);
+
+        if (request.getDepartureLocation() != null && !request.getDepartureLocation().trim().isEmpty()) {
+            schedule.setDepartureLocation(request.getDepartureLocation());
+        }
+
+        TourSchedule updatedSchedule = scheduleRepository.save(schedule);
+
+        if (request.getPricings() != null && !request.getPricings().isEmpty()) {
+
+            List<TourPricingConfig> oldPricings = pricingRepository.findByScheduleId(id);
+            if (oldPricings != null && !oldPricings.isEmpty()) {
+                pricingRepository.deleteAll(oldPricings);
+            }
+
+            List<TourPricingConfig> newPricingConfigs = request.getPricings().stream()
+                    .map(pricingDto -> TourPricingConfig.builder()
+                            .schedule(updatedSchedule)
+                            .passengerType(pricingDto.getPassengerType())
+                            .price(pricingDto.getPrice())
+                            .currency(pricingDto.getCurrency() != null ? pricingDto.getCurrency() : "VND")
+                            .build())
+                    .toList();
+
+            pricingRepository.saveAll(newPricingConfigs);
+            log.info(" Admin đã cập nhật lại bảng giá vé mới cho Schedule ID: {}", id);
+        }
+
+        return enrichScheduleResponse(updatedSchedule);
     }
 }
